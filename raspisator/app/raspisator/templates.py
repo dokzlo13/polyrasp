@@ -31,6 +31,15 @@ class Messages:
     no_schedule =  "Извините, активных расписаний для Вас не найдено!\n Попробуйте добавить группу /add"
     faculties_unaviable = "Извините, на данный момент нет информации о расписаниях, попробуйте позже!"
     schedule_will_be_updated = '*Информация о вашем расписании будет обновлена!*'
+    welcome = "Добро пожаловать!"
+    what_to_do = "*Что необходимо сделать?*"
+    hello = "Привет! Проверь список своих подписок. Для изменения настроек используй /subs"
+    settings = "Настройки групп"
+    please_select_group = "Пожалуйста, выберите группу"
+
+    @staticmethod
+    def schedule_for(date):
+        return "*Расписание на {0}:*".format(date.strftime("%Y-%m-%d"))
 
 class ParseMode(object):
     """This object represents a Telegram Message Parse Modes."""

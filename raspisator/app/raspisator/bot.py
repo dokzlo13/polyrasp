@@ -43,7 +43,7 @@ def send_lessons_by_date(date, uid, chat):
         lessons.append(studiesmodel.get_lessons_in_day(sub["id"], date))
 
     if all([lesson == [] for lesson in lessons]):
-        bot.send_message(chat, Messages.no_shedule_on_date)
+        bot.send_message(chat, Messages.no_schedule_on_date)
         return
 
     for lesson in lessons:
@@ -56,7 +56,7 @@ def send_lessons_by_date(date, uid, chat):
 def handle_init(message):
     _, subs = init_user(message)
     if subs:
-        bot.send_message(message.chat.id, text='Привет! Проверь список своих подписок. Для изменения настроек используй /subs')
+        bot.send_message(message.chat.id, text=Messages.hello)
         return handle_subscribes(message)
 
     else:
@@ -72,8 +72,7 @@ def init_user(message):
 def handle_subscribes(message):
     _, subs = init_user(message)
     if not subs:
-        bot.send_message(message.chat.id, text='Извините, мы не нашли ни одной подписки для Вас!\n'
-                                               'Добавьте группу с помощью комманды /add',
+        bot.send_message(message.chat.id, Messages.no_schedule,
                          parse_mode=ParseMode.MARKDOWN)
         return
 
@@ -88,7 +87,7 @@ def handle_subscribes(message):
 @bot.message_handler(commands=['main'])
 def handle_main_menu(message):
     markup = gen_main_menu_markup()
-    bot.send_message(message.chat.id, "Добро пожаловать!", reply_markup=markup)
+    bot.send_message(message.chat.id, Messages.welcome, reply_markup=markup)
 
 
 @bot.message_handler(commands=['add'])
@@ -113,7 +112,7 @@ def handle_faculty_init(message):
 
 @bot.message_handler(commands=['rasp'])
 def handle_rasp_search(message):
-    bot.send_message(message.chat.id, 'Что необходимо сделать?',
+    bot.send_message(message.chat.id, Messages.what_to_do,
                      reply_markup=gen_search_menu_markup(), parse_mode=ParseMode.MARKDOWN)
 
 
@@ -146,7 +145,7 @@ def renew_user_subscriptions(message):
 @bot.message_handler(commands=['groupset'])
 def group_settings_handler(message):
     _, subs = init_user(message)
-    bot.send_message(message.chat.id, text='Настройки групп',
+    bot.send_message(message.chat.id, text=Messages.settings,
                      reply_markup=gen_groups_settings_markup(subs))
 
 
@@ -225,7 +224,7 @@ def callback_settings(call):
         subs =  usersmodel.get_subsciptions(tel_user=call.from_user.id)
         bot.send_message(call.message.chat.id, text='Группа {0} удалена из ваших подписок!'.format(removed_group),)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              reply_markup=gen_groups_settings_markup(subs), text="Пожалуйста, выберите группу")
+                              reply_markup=gen_groups_settings_markup(subs), text=Messages.please_select_group)
 
     if call.data.startswith('groupinfo-'):
         sub_id = call.data[10:]
@@ -239,7 +238,7 @@ def callback_settings(call):
     if call.data.startswith('back'):
         subs = usersmodel.get_subsciptions(tel_user=call.from_user.id,)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              reply_markup=gen_groups_settings_markup(subs), text="Пожалуйста, выберите группу")
+                              reply_markup=gen_groups_settings_markup(subs), text=Messages.please_select_group)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "dialog-close")
@@ -280,6 +279,7 @@ def callback_week(call):
     if call.data.startswith('day-'):
         call.data = call.data[4:]
         date = datetime.strptime(call.data, "%Y-%m-%d")
+        bot.send_message(call.message.chat.id, Messages.schedule_for(date), parse_mode=ParseMode.MARKDOWN)
         send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
 
 
@@ -318,6 +318,7 @@ def callback_calendar(call):
         if (saved_date is not None):
             day = call.data[4:]
             date = datetime(int(saved_date[0]), int(saved_date[1]), int(day), 0, 0, 0)
+            bot.send_message(call.message.chat.id, Messages.schedule_for(date))
             send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
 
 
