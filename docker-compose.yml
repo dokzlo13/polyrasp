@@ -1,0 +1,57 @@
+version: "3"
+services:
+  bot:
+    build:
+      context: ./raspisator
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - 'variables.env'
+    environment:
+      - BOT_TOKEN=**SANTINIZED**
+      - BOT_DEBUG=1
+    depends_on:
+      - redis
+      - mongo
+    networks:
+      - mongo-redis-celery
+      
+  worker:
+    build:
+      context: worker
+      dockerfile: Dockerfile
+    env_file:
+      - 'variables.env'
+    depends_on:
+      - redis
+      - mongo
+    networks:
+      - mongo-redis-celery
+        
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    networks:
+      mongo-redis-celery:
+        aliases:
+          - "redis"
+    
+  mongo:   
+    image: mongo:latest
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    volumes:
+      - ./data/db:/data/db
+    ports:
+      - 27017:27017
+    command: mongod --smallfiles --logpath=/dev/null # --quiet
+    networks:
+        mongo-redis-celery:
+          aliases:
+            - "mongodb"
+  
+networks:
+  mongo-redis-celery:
+    driver: bridge
