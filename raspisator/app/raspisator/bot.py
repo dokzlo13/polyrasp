@@ -33,6 +33,7 @@ db = conn.get_database(MONGO_DB)
 studiesmodel = Studiesdata(db)
 usersmodel = Userdata(db)
 
+# TODO: migrate this to DB
 current_shown_dates = {}
 current_shown_weeks = {}
 
@@ -95,7 +96,7 @@ def handle_faculty_init(message):
     faculties = studiesmodel.get_faculties_names()
 
     if not faculties:
-        bot.send_message(message.chat.id, "Извините, на данный момент нет информации о расписаниях, попробуйте позже!")
+        bot.send_message(message.chat.id, Messages.faculties_unaviable)
         return
 
     d = Dialog(globals={'m':studiesmodel, 'u':usersmodel})
@@ -120,16 +121,14 @@ def handle_rasp_search(message):
 def get_nearest_lessons(message):
     user, subs = init_user(message)
     if not subs:
-        bot.send_message(message.chat.id, "Извините, активных расписаний для Вас не найдено!\n"
-                                          "Попробуйте добавить группу /add", reply_markup=gen_main_menu_markup())
+        bot.send_message(message.chat.id, Messages.no_schedule, reply_markup=gen_main_menu_markup())
         return
     lessons = []
     for sub in subs:
         lessons.append(studiesmodel.get_nearest_lesson(sub['id']))
 
     if not all(lessons):
-        bot.send_message(message.chat.id, "Извините, активных расписаний для Вас не найдено!\n"
-                                          "Попробуйте добавить группу /add", reply_markup=gen_main_menu_markup())
+        bot.send_message(message.chat.id, Messages.no_schedule, reply_markup=gen_main_menu_markup())
         return
     for lesson in lessons:
         msg = lessons_template([lesson])
@@ -140,7 +139,7 @@ def get_nearest_lessons(message):
 def renew_user_subscriptions(message):
     resp = celery.send_task('deferred.get_user_subscribtion', args=[message.from_user.id])
     # resp = get_user_subscribtion.delay(message.from_user.id)
-    bot.send_message(message.chat.id, '*Информация о вашем расписании будет обновлена!*',
+    bot.send_message(message.chat.id, Messages.schedule_will_be_updated,
                      reply_markup=gen_main_menu_markup(), parse_mode=ParseMode.MARKDOWN)
 
 
@@ -158,7 +157,7 @@ def calendar_search_handler(message):
     date = (now.year,now.month)
     current_shown_dates[chat_id] = date #Saving the current date in a dict
     markup= create_calendar(now.year,now.month)
-    bot.send_message(message.chat.id, "Пожалуйста, выберите дату", reply_markup=markup)
+    bot.send_message(message.chat.id, Messages.select_date, reply_markup=markup)
 
 
 @bot.message_handler(commands=['teacher'])

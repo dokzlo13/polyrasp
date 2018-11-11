@@ -26,8 +26,11 @@ group_setting_button = emoj(':wrench: Настроить группы')
 
 
 class Messages:
-    no_shedule_on_date = "Извините, расписаний для этого дня не найдено!"
+    no_schedule_on_date = "Извините, расписаний для этого дня не найдено!"
     select_date = "Пожалуста, выберите день:"
+    no_schedule =  "Извините, активных расписаний для Вас не найдено!\n Попробуйте добавить группу /add"
+    faculties_unaviable = "Извините, на данный момент нет информации о расписаниях, попробуйте позже!"
+    schedule_will_be_updated = '*Информация о вашем расписании будет обновлена!*'
 
 class ParseMode(object):
     """This object represents a Telegram Message Parse Modes."""
