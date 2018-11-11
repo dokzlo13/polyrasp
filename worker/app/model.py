@@ -229,16 +229,26 @@ class Studiesdata:
                                                 {"time_start": {'$lte': day+timedelta(days=1)}}]
                                        }))
 
-    def get_nearest_lesson(self, group_id):
+    def get_nearest_lesson(self, group_id, delta=None):
+        delta = delta or timedelta(days=7)
         return self.lessons.find_one({'groups.id': group_id,
-                                  "time_start":{'$gte': datetime.now(), '$lt': datetime.now() + timedelta(days=7)}},
+                                  "time_start":{'$gte': datetime.now(), '$lt': datetime.now() + delta}},
                                  {'checksum': 0, '_id':0},)
 
-    def get_lessons_by_subscription_in_time(self, sub_id, datetime, delta):
+    def get_lessons_by_subscription_by_delta(self, sub_id, date, delta):
         q = {"sub_id": str(sub_id)}
         q.update({'$and':
-                     [{"time_start": {'$gte': datetime - delta}},
-                      {"time_start": {'$lte': datetime + delta}}]
+                     [{"time_start": {'$gte': date - delta}},
+                      {"time_start": {'$lte': date + delta}}]
+                 }
+                 )
+        return list(self.lessons.find(q))
+
+    def get_lessons_by_subscription_in_range(self, sub_id, from_, to):
+        q = {"sub_id": str(sub_id)}
+        q.update({'$and':
+                     [{"time_start": {'$gte': from_}},
+                      {"time_start": {'$lte': to}}]
                  }
                  )
         return list(self.lessons.find(q))
