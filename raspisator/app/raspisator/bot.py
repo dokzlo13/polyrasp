@@ -34,6 +34,22 @@ studiesmodel = Studiesdata(db)
 usersmodel = Userdata(db)
 
 current_shown_dates = {}
+current_shown_weeks = {}
+
+def send_lessons_by_date(date, uid, chat):
+    lessons = []
+    for sub in usersmodel.get_subsciptions(tel_user=uid):
+        lessons.append(studiesmodel.get_lessons_in_day(sub["id"], date))
+
+    if all([lesson == [] for lesson in lessons]):
+        bot.send_message(chat, Messages.no_shedule_on_date)
+        return
+
+    for lesson in lessons:
+        if lesson == []:
+            continue
+        msg = lessons_template(lesson)
+        bot.send_message(chat, msg, parse_mode=ParseMode.MARKDOWN)
 
 @bot.message_handler(commands=['start'])
 def handle_init(message):
@@ -158,7 +174,9 @@ def teacher_search_handler(message):
 
 @bot.message_handler(commands=['week'])
 def week_select_handler(message):
-    pass
+    current_shown_weeks[message.chat.id] = datetime.now()
+    week_markup = create_week(datetime.now())
+    bot.send_message(message.chat.id, Messages.select_date, reply_markup=week_markup)
 
 ## INLINE QUERY HANDLE NEAREST PAIR
 
@@ -230,6 +248,42 @@ def close_dialog(call):
     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
 
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('week-'))
+def callback_week(call):
+    # if is bot chat
+    if not call.message:
+        return
+    # Strip 'week-' from callback
+    call.data = call.data[5:]
+    chat_id = call.message.chat.id
+
+    if call.data == 'next-week':
+        saved_date = current_shown_weeks.get(chat_id)
+        if (saved_date is not None):
+            next_w = next_weekday(saved_date, 0)
+            current_shown_weeks[chat_id] = next_w
+            markup = create_week(next_w)
+            bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
+                              reply_markup=markup)
+            bot.answer_callback_query(call.id, text="")
+
+    if call.data == 'previous-week':
+        saved_date = current_shown_weeks.get(chat_id)
+        if (saved_date is not None):
+            next_w = last_weekday(saved_date, 0)
+            current_shown_weeks[chat_id] = next_w
+            markup = create_week(next_w)
+            bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
+                              reply_markup=markup)
+            bot.answer_callback_query(call.id, text="")
+
+    if call.data.startswith('day-'):
+        call.data = call.data[4:]
+        date = datetime.strptime(call.data, "%Y-%m-%d")
+        send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
+
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith('calendar-'))
 def callback_calendar(call):
     # if is bot chat
@@ -238,69 +292,34 @@ def callback_calendar(call):
 
     # Strip 'calendar-' from callback
     call.data = call.data[9:]
+    chat_id = call.message.chat.id
 
     if call.data == 'next-month':
-        chat_id = call.message.chat.id
         saved_date = current_shown_dates.get(chat_id)
         if (saved_date is not None):
-            year, month = saved_date
-            month += 1
-            if month > 12:
-                month = 1
-                year += 1
-            date = (year, month)
-            current_shown_dates[chat_id] = date
-            markup = create_calendar(year, month)
-            bot.edit_message_text("Please, choose a date", call.from_user.id, call.message.message_id,
+            next_m = next_month(*saved_date)
+            current_shown_dates[chat_id] = next_m
+            markup = create_calendar(*next_m)
+            bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
                                   reply_markup=markup)
             bot.answer_callback_query(call.id, text="")
-        else:
-            # Do something to inform of the error
-            pass
 
     if call.data == 'previous-month':
-        chat_id = call.message.chat.id
         saved_date = current_shown_dates.get(chat_id)
         if (saved_date is not None):
-            year, month = saved_date
-            month -= 1
-            if month < 1:
-                month = 12
-                year -= 1
-            date = (year, month)
-            current_shown_dates[chat_id] = date
-            markup = create_calendar(year, month)
-            bot.edit_message_text("Please, choose a date", call.from_user.id, call.message.message_id,
+            last_m = last_month(*saved_date)
+            current_shown_dates[chat_id] = last_m
+            markup = create_calendar(*last_m)
+            bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
                                   reply_markup=markup)
             bot.answer_callback_query(call.id, text="")
-        else:
-            # Do something to inform of the error
-            pass
 
     if call.data.startswith('day-'):
-        chat_id = call.message.chat.id
         saved_date = current_shown_dates.get(chat_id)
         if (saved_date is not None):
             day = call.data[4:]
             date = datetime(int(saved_date[0]), int(saved_date[1]), int(day), 0, 0, 0)
-            lessons = []
-            for sub in  usersmodel.get_subsciptions(tel_user=call.from_user.id):
-                lessons.append(studiesmodel.get_lessons_in_day(sub["id"], date))
-
-            if all([lesson==[] for lesson in lessons]):
-                bot.send_message(call.message.chat.id, "Извините, активных расписаний для Вас не найдено!\n"
-                                                       "Попробуйте добавить группу /add",)
-                return
-
-            for lesson in lessons:
-                if lesson == []:
-                    continue
-                msg = lessons_template(lesson)
-                bot.send_message(call.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN, )
-        else:
-            # Do something to inform of the error
-            pass
-
+            send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
 
 
 ## ALIASES FOR COMMANDS
@@ -341,7 +360,18 @@ def _(message):
 def _(message):
     return teacher_search_handler(message)
 
+@bot.message_handler(func= lambda message: message.text == main_menu['week'])
+def _(message):
+    return week_select_handler(message)
+
+
+## SERVICE COMMANDS
 @bot.message_handler(func= lambda message: message.text == 'update-database-schema')
 def _(message):
     resp = celery.send_task('deferred.get_groups_schema')
-    bot.send_message(message.chat.id, 'Schema will be updated! Task {0}'.format(str(resp)))
+    bot.send_message(message.chat.id, 'Schema will be updated! Task: "{0}"'.format(str(resp)))
+
+@bot.message_handler(func= lambda message: message.text == 'purge-unused-subs')
+def _(message):
+    resp = celery.send_task('deferred.unlink_non_used_subs')
+    bot.send_message(message.chat.id, 'Unused subs will be removed! Task: "{0}"'.format(str(resp)))

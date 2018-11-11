@@ -24,6 +24,11 @@ main_menu_button = emoj(':house: Главное меню')
 back_button = emoj(':arrow_backward: Назад')
 group_setting_button = emoj(':wrench: Настроить группы')
 
+
+class Messages:
+    no_shedule_on_date = "Извините, расписаний для этого дня не найдено!"
+    select_date = "Пожалуста, выберите день:"
+
 class ParseMode(object):
     """This object represents a Telegram Message Parse Modes."""
 

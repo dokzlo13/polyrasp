@@ -16,6 +16,21 @@ def last_weekday(date, weekday):
         day_gap -= 7
     return date + timedelta(days=day_gap)
 
+
+def next_month(year, month):
+    month += 1
+    if month > 12:
+        month = 1
+        year += 1
+    return year, month
+
+def last_month(year, month):
+    month -= 1
+    if month < 1:
+        month = 12
+        year -= 1
+    return year, month
+
 def get_mondays_ahead(amount):
     weeks = [datetime.now()]
     for week in range(1, amount+1):
@@ -46,3 +61,13 @@ def convert_concat_day_and_lesson(lesson: str, weekday: datetime) -> datetime:
                  month=weekday.month,
                  day=weekday.day)
     return lesson
+
+def full_week(date):
+    year, week, dow = date.isocalendar()
+    if dow == 1:
+        start_date = date
+    else:
+        start_date = date - timedelta(dow)
+
+    for delta in map(timedelta, range(7)):
+        yield start_date + delta

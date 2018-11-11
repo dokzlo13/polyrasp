@@ -154,3 +154,29 @@ def create_calendar(year,month):
     row.append(types.InlineKeyboardButton(emoj(":arrow_forward:"), callback_data="calendar-next-month"))
     markup.row(*row)
     return markup
+
+from .timeworks import full_week
+
+def create_week(date):
+    markup = types.InlineKeyboardMarkup()
+    week = list(full_week(date))
+
+    row=[]
+    for day in week:
+        row.append(types.InlineKeyboardButton(day.strftime("%a"), callback_data="week-day-" + day.strftime("%Y-%m-%d")))
+    markup.row(*row)
+
+    row=[]
+    for day in week:
+        row.append(types.InlineKeyboardButton(day.strftime("%d"), callback_data="week-day-" + day.strftime("%Y-%m-%d")))
+    markup.row(*row)
+
+    markup.row(types.InlineKeyboardButton(emoj(':date:')+ week[0].strftime(' %B').capitalize(), callback_data="ignore"))
+
+    row=[]
+    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="week-previous-week"))
+    row.append(types.InlineKeyboardButton("Закрыть",callback_data="dialog-close"))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_forward:"), callback_data="week-next-week"))
+    markup.row(*row)
+
+    return markup
