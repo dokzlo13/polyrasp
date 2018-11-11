@@ -95,8 +95,8 @@ def gen_groups_settings_info():
 def create_group_settings_markup(name, sub_id, sub_state):
     markup = types.InlineKeyboardMarkup(row_width=2)
     row = []
-    row.append(types.InlineKeyboardButton(emoj(":arrow_backward: Назад"),
-                                          callback_data='settings-back'))
+    row.append(types.InlineKeyboardButton(emoj(':no_entry_sign: Удалить'),
+                               callback_data='settings-unsub-' + sub_id))
     row.append(types.InlineKeyboardButton(emoj(':information_source: ' + name),
                                           callback_data="settings-groupinfo-"+sub_id))
     markup.row(*row)
@@ -119,8 +119,8 @@ def create_group_settings_markup(name, sub_id, sub_state):
 
     markup.row(*row)
 
-    markup.row(types.InlineKeyboardButton(emoj(':no_entry_sign: Удалить'),
-                                          callback_data='settings-unsub-'+sub_id))
+    markup.row(types.InlineKeyboardButton(emoj(":arrow_backward: Назад"),
+                                          callback_data='settings-back'))
 
     return markup
 
