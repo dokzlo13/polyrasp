@@ -58,22 +58,25 @@ def get_teacher_short(teacher_data):
 
 def lessons_template(data, markup=True):
     text = ""
-    text += "{% for lesson in data %}"
-    text += "{% if lesson %}{% if lesson['groups'] %}\n:two_men_holding_hands:: {% endif %}"
-    text += "{% for group in lesson['groups']%}"
+
+    text += "{% if data[0] %}{% if data[0]['groups'] %}\n:two_men_holding_hands: {% endif %}"
+    text += "{% for group in data[0]['groups']%}"
     text += "{% if group['name'] %}"
     text += "*{{ group['name'] }}*, " if markup else "{{ group['name'] }}, "
     text += "{% endif %}"
     text += "{% endfor %}"
+    text += "{% endif %}"
+    text += "\n:calendar: {{  data[0]['time_start'].strftime('%A, %d %B') }} \n"
+
+    text += "{% for lesson in data %}"
     text += "{% if lesson['additional_info'] %}\n:information_source: {{lesson['additional_info']}}{% endif %}"
-    text += "\n:calendar: {{  lesson['time_start'].strftime('%A, %d %B') }} "
     text += "\n:pencil: *{{ lesson['subject']}}*" if markup else "\n:pencil: {{ lesson['subject']}}"
     text += "\n:mag_right: _{{ lesson['typeObj']['name'] }}_ " if markup else "\n:mag_right: {{ lesson['typeObj']['name'] }} "
     text+= ":clock10: {{ lesson['time_start'].strftime('%H:%M') }}-{{lesson['time_end'].strftime('%H:%M')}}"
     text += "\n:school: {{ lesson['auditories'][0]['building']['abbr'] }}, {{ lesson['auditories'][0]['name'] }}"
     text+= "{% if lesson['teachers'] %}({{ short_fio(lesson['teachers'][0]) }}){% endif %}"
     # text +=  "{{ day['addr'] }}, {{ day['room'] }} ({{ day['teacher'] }})\n\n"
-    text += "\n{% endif %}{% endfor %}"
+    text += "\n{% endfor %}"
     t = Template(text)
     t.globals['short_fio'] = get_teacher_short
     message = emoj(t.render(data=data))
