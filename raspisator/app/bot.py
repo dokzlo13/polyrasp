@@ -304,22 +304,28 @@ def callback_calendar(call):
     call.data = call.data[9:]
     chat_id = call.message.chat.id
 
+    if call.data == 'back-to-calendar':
+        bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
+                              reply_markup=create_calendar_inline(*current_shown_dates[chat_id]))
+        bot.answer_callback_query(call.id, text="")
+
     if call.data == 'next-month':
         saved_date = current_shown_dates.get(chat_id)
         if (saved_date is not None):
             next_m = next_month(*saved_date)
             current_shown_dates[chat_id] = next_m
-            markup = create_calendar(*next_m)
+            markup = create_calendar_inline(*next_m)
             bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
                                   reply_markup=markup)
             bot.answer_callback_query(call.id, text="")
+            # bot.send_chat_action(, 'typing')
 
     if call.data == 'previous-month':
         saved_date = current_shown_dates.get(chat_id)
         if (saved_date is not None):
             last_m = last_month(*saved_date)
             current_shown_dates[chat_id] = last_m
-            markup = create_calendar(*last_m)
+            markup = create_calendar_inline(*last_m)
             bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
                                   reply_markup=markup)
             bot.answer_callback_query(call.id, text="")
@@ -329,11 +335,12 @@ def callback_calendar(call):
         if (saved_date is not None):
             day = call.data[4:]
             date = datetime(int(saved_date[0]), int(saved_date[1]), int(day), 0, 0, 0)
-            bot.send_message(call.message.chat.id, Messages.schedule_for(date), parse_mode=ParseMode.MARKDOWN)
-            bot.send_message(call.message.chat.id, get_user_lessons_by_date(call.from_user.id, date),
-                             parse_mode=ParseMode.MARKDOWN)
+            bot.edit_message_text(get_user_lessons_by_date(call.from_user.id, date),
+                                  call.from_user.id, call.message.message_id,
+                                  reply_markup=create_month_back_inline(date),
+                                  parse_mode=ParseMode.MARKDOWN)
+
             bot.answer_callback_query(call.id, text="")
-            # send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
 
 
 ## ALIASES FOR COMMANDS
