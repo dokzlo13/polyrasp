@@ -39,20 +39,19 @@ usersmodel = Userdata(db)
 current_shown_dates = {}
 current_shown_weeks = {}
 
-def send_lessons_by_date(date, uid, chat):
+def get_user_lessons_by_date(uid, date):
     lessons = []
     for sub in usersmodel.get_subsciptions(tel_user=uid):
         lessons.append(studiesmodel.get_lessons_in_day(sub["id"], date))
 
     if all([lesson == [] for lesson in lessons]):
-        bot.send_message(chat, Messages.no_schedule_on_date)
-        return
+        return Messages.no_schedule_on_date
 
     for lesson in lessons:
         if lesson == []:
             continue
-        msg = lessons_template(lesson)
-        bot.send_message(chat, msg, parse_mode=ParseMode.MARKDOWN)
+        return lessons_template(lesson)
+
 
 @bot.message_handler(commands=['start'])
 def handle_init(message):
@@ -280,8 +279,15 @@ def callback_week(call):
     if call.data.startswith('day-'):
         call.data = call.data[4:]
         date = datetime.strptime(call.data, "%Y-%m-%d")
-        bot.send_message(call.message.chat.id, Messages.schedule_for(date), parse_mode=ParseMode.MARKDOWN)
-        send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
+
+        bot.edit_message_text(get_user_lessons_by_date(call.from_user.id, date),
+                              call.from_user.id, call.message.message_id,
+                              reply_markup=create_week(current_shown_weeks[chat_id]),
+                              parse_mode=ParseMode.MARKDOWN)
+        bot.answer_callback_query(call.id, text="")
+
+        # bot.send_message(call.message.chat.id, Messages.schedule_for(date), parse_mode=ParseMode.MARKDOWN)
+        # bot.send_message(call.message.chat.id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('calendar-'))
@@ -319,8 +325,11 @@ def callback_calendar(call):
         if (saved_date is not None):
             day = call.data[4:]
             date = datetime(int(saved_date[0]), int(saved_date[1]), int(day), 0, 0, 0)
-            bot.send_message(call.message.chat.id, Messages.schedule_for(date))
-            send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
+            bot.send_message(call.message.chat.id, Messages.schedule_for(date), parse_mode=ParseMode.MARKDOWN)
+            bot.send_message(call.message.chat.id, get_user_lessons_by_date(call.from_user.id, date),
+                             parse_mode=ParseMode.MARKDOWN)
+            bot.answer_callback_query(call.id, text="")
+            # send_lessons_by_date(date, call.from_user.id, call.message.chat.id)
 
 
 ## ALIASES FOR COMMANDS
