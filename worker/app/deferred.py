@@ -68,17 +68,18 @@ def merge_dictionaries(dict1, dict2):
 def get_groups_schema():
     with StudiesStandalone(purge_schema=['faculties', 'groups']) as s:
 
-        print('Collecting faculties')
         faculties_data = collect_faculties()
         s.update_faculties(faculties_data)
-
-        print('Collecting groups')
+        
+        groups_total = 0
         for facult in faculties_data:
             groups_data = collect_groups(facult['id'])
             if groups_data:
                 for gr in groups_data:
+                    groups_total += 1
                     gr.update({'facultie': facult['id']})
                 s.update_groups(groups_data)
+        return {'faculties': len(faculties_data), 'groups': groups_total}
 
 
 def collect_lessons_data(facult, id_, params=None):
