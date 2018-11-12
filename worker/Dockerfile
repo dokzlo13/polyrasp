@@ -12,6 +12,6 @@ RUN CFLAGS="-O0" pip install -r requirements.txt
 
 # install app
 COPY ./worker /queue
-COPY ./shared /worker/app/shared
+COPY ./shared /queue/app/shared
 
 ENTRYPOINT celery -A app worker -B --loglevel=INFO
