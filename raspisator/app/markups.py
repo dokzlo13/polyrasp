@@ -8,7 +8,7 @@ from .templates import lessons_template, short_group
 from .shared.timeworks import full_week
 
 def gen_dict_markup(mapper, back=True):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     for facult in mapper.keys():
         markup.add(facult)
     markup.add(main_menu_button)
@@ -18,7 +18,7 @@ def gen_dict_markup(mapper, back=True):
 
 
 def gen_list_markup(list_, key=None, back=True):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     for item in list_:
         if key:
             markup.add(str(item[key]))
@@ -32,7 +32,7 @@ def gen_list_markup(list_, key=None, back=True):
 
 
 def gen_search_menu_markup():
-    markup = types.ReplyKeyboardMarkup(row_width=2)
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.row(types.KeyboardButton(search_menu['teacher']))
     markup.row(types.KeyboardButton(search_menu['calendar']))
     markup.row(types.KeyboardButton(main_menu_button))
@@ -40,7 +40,7 @@ def gen_search_menu_markup():
 
 
 def gen_main_menu_markup():
-    markup = types.ReplyKeyboardMarkup(row_width=2)
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.row(types.KeyboardButton(main_menu['nearset']), types.KeyboardButton(main_menu['week']))
     row = []
     row.append(types.KeyboardButton(main_menu['plan']))
