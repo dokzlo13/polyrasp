@@ -3,6 +3,7 @@ import calendar
 from telebot import types
 from .templates import main_menu, emoj, main_menu_button, back_button, group_setting_button, search_menu
 from .templates import lessons_template, short_group
+from .shared.timeworks import full_week
 
 def gen_dict_markup(mapper, back=True):
     markup = types.ReplyKeyboardMarkup(row_width=1)
@@ -155,7 +156,6 @@ def create_calendar(year,month):
     markup.row(*row)
     return markup
 
-from .timeworks import full_week
 
 def create_week(date):
     markup = types.InlineKeyboardMarkup()

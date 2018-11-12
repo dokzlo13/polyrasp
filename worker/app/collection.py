@@ -5,7 +5,7 @@ import requests
 from lxml import etree
 
 
-TIMEOUT = 1.5
+TIMEOUT = 5
 
 def parse_react_init(element):
     if element is None:

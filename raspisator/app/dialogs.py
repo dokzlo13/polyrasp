@@ -5,7 +5,7 @@ from .templates import selected_group_message
 from .templates import level_mapper, type_mapper, kind_mapper, group_checkout_mapper
 from .markups import *
 from .chains import Retry
-from .timeworks import convert_concat_day_and_lesson
+from .shared.timeworks import convert_concat_day_and_lesson
 
 from .worker import celery
 # from deferred import get_subscribtion

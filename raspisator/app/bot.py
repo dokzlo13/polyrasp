@@ -5,11 +5,12 @@ import logging
 
 from pymongo import MongoClient
 
-from .model import Studiesdata, Userdata
+from .shared.model import Studiesdata, Userdata
 from .dialogs import *
 from .chains import DynamicMarkup, Dialog
 from .worker import celery
-from .templates import ParseMode
+from .templates import ParseMode, Messages
+from .shared.timeworks import next_weekday, last_weekday, next_month, last_month
 
 locale.setlocale(locale.LC_ALL, ('RU','UTF8'))
 
@@ -22,7 +23,8 @@ MONGO_CONNECTION = os.environ.get('MONGO_CONNECTION', 'mongodb://localhost:27017
 MONGO_DB = os.environ.get('MONGO_DB', 'raspisator')
 
 
-bot = telebot.TeleBot(token=BOT_TOKEN, threaded=False)
+# bot = telebot.TeleBot(token=BOT_TOKEN, threaded=False)
+bot = telebot.AsyncTeleBot(token=BOT_TOKEN, threaded=False)
 telebot.logger.warning('Initalizing bot with token: {0}'.format("<SANTINIZED>" if BOT_TOKEN != None else "<EMPTY>"))
 
 conn = MongoClient(MONGO_CONNECTION)
@@ -246,7 +248,6 @@ def close_dialog(call):
     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
 
-
 @bot.callback_query_handler(func=lambda call: call.data.startswith('week-'))
 def callback_week(call):
     # if is bot chat
@@ -375,3 +376,8 @@ def _(message):
 def _(message):
     resp = celery.send_task('deferred.unlink_non_used_subs')
     bot.send_message(message.chat.id, 'Unused subs will be removed! Task: "{0}"'.format(str(resp)))
+
+@bot.message_handler(func= lambda message: message.text == 'purge-timeouts')
+def _(message):
+    resp = celery.send_task('deferred.purge_subscription_timeouts')
+    bot.send_message(message.chat.id, 'Timeouts purged! "{0}"'.format(str(resp)))

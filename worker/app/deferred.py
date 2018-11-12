@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 import locale
 
 
-from model import context_model
-from model import Studiesdata, Userdata
-from collection import collect_groups, collect_faculties, collect_rasp, get_teachers, get_teacher_rasp
-from timeworks import timeout_has_passed, get_weeks_range, convert_concat_day_and_lesson, strf_list
+from .shared.model import context_model
+from .shared.model import Studiesdata, Userdata
+from .collection import collect_groups, collect_faculties, collect_rasp, get_teachers, get_teacher_rasp
+from .shared.timeworks import timeout_has_passed, get_weeks_range, convert_concat_day_and_lesson, strf_list
 
 locale.setlocale(locale.LC_ALL, ('RU','UTF8'))
 
@@ -70,7 +70,7 @@ def get_groups_schema():
 
         faculties_data = collect_faculties()
         s.update_faculties(faculties_data)
-        
+
         groups_total = 0
         for facult in faculties_data:
             groups_data = collect_groups(facult['id'])
@@ -160,3 +160,23 @@ def unlink_non_used_subs():
         lessons_rem = s.remove_lessons_by_subscriptions([un['_id'] for un in unused])
         subs_rem = u.delete_unused_subscriptions()
     return {'lessons': lessons_rem, 'subscriptions': subs_rem}
+
+@app.task
+def purge_subscription_timeouts():
+    with UserStandalone() as u:
+        return u.purge_subscription_timeouts()
+
+@app.task
+def notify_users():
+    with StudiesStandalone() as s, \
+            UserStandalone() as u:
+        for user_sub_set in u.get_all_users_subscription_settings():
+            for sub, setting in user_sub_set.items():
+                if setting['notify']:
+                    print(s.get_lessons_by_subscription_in_range(sub, datetime.now(), datetime.now()+timedelta(days=3)))
+            # sub, settings = list(sub_set.items())
+            #
+            # print(sub)
+            # print(type(settings))
+            # if settings['notify']:
+            #     print(s.get_lessons_by_subscription_in_time(sub, datetime.now(), timedelta(days=10)))
