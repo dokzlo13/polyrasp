@@ -7,8 +7,8 @@ import locale
 
 from .shared.model import context_model
 from .shared.model import Studiesdata, Userdata
-from .collection import collect_groups, collect_faculties, collect_rasp, get_teachers, get_teacher_rasp
 from .shared.timeworks import timeout_has_passed, get_weeks_range, convert_concat_day_and_lesson, strf_list
+from .collection import collect_groups, collect_faculties, collect_rasp, get_teachers, get_teacher_rasp
 
 locale.setlocale(locale.LC_ALL, ('RU','UTF8'))
 
@@ -64,7 +64,7 @@ def merge_dictionaries(dict1, dict2):
     return merged_dictionary
 
 
-@app.task
+@app.task(name='deferred.get_groups_schema')
 def get_groups_schema():
     with StudiesStandalone(purge_schema=['faculties', 'groups']) as s:
 
@@ -119,7 +119,7 @@ def process_subs(s, u, subs_list, force=False):
     return updates
 
 
-@app.task
+@app.task(name='deferred.get_all_subscibtions_data')
 def get_all_subscibtions_data(force=False):
     with StudiesStandalone() as s, \
             UserStandalone() as u:
@@ -127,7 +127,7 @@ def get_all_subscibtions_data(force=False):
     return updates
 
 
-@app.task
+@app.task(name='deferred.get_subscribtion')
 def get_subscribtion(sub_id):
     with StudiesStandalone() as s, \
             UserStandalone() as u:
@@ -135,7 +135,7 @@ def get_subscribtion(sub_id):
     return updates
 
 
-@app.task
+@app.task(name='deferred.get_user_subscribtion')
 def get_user_subscribtion(tel_user):
     with StudiesStandalone() as s, \
             UserStandalone() as u:
@@ -143,17 +143,17 @@ def get_user_subscribtion(tel_user):
     return updates
 
 
-@app.task
+@app.task(name='deferred.get_teacher_search')
 def get_teacher_search(name):
     return get_teachers(name)
 
 
-@app.task
+@app.task(name='deferred.get_teacher_lessons')
 def get_teacher_lessons(id_, params=None):
     return get_teacher_rasp(id_, params=params)
 
 
-@app.task
+@app.task(name='deferred.unlink_non_used_subs')
 def unlink_non_used_subs():
     with StudiesStandalone() as s, \
             UserStandalone() as u:
@@ -162,12 +162,12 @@ def unlink_non_used_subs():
         subs_rem = u.delete_unused_subscriptions()
     return {'lessons': lessons_rem, 'subscriptions': subs_rem}
 
-@app.task
+@app.task(name='deferred.purge_subscription_timeouts')
 def purge_subscription_timeouts():
     with UserStandalone() as u:
-        return u.purge_subscription_timeouts()
+        return u.purge_subscription_timeouts().raw_result
 
-@app.task
+@app.task(name='deferred.notify_users')
 def notify_users():
     with StudiesStandalone() as s, \
             UserStandalone() as u:
