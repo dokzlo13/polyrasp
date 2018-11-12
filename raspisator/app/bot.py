@@ -92,7 +92,7 @@ def handle_subscribes(message):
 @bot.message_handler(commands=['main'])
 def handle_main_menu(message):
     markup = gen_main_menu_markup()
-    bot.send_message(message.chat.id, Messages.welcome, reply_markup=markup)
+    bot.send_message(message.chat.id, Messages.welcome, reply_markup=markup, parse_mode=ParseMode.MARKDOWN)
 
 
 @bot.message_handler(commands=['add'])
@@ -160,7 +160,7 @@ def calendar_search_handler(message):
     chat_id = message.chat.id
     date = (now.year,now.month)
     current_shown_dates[chat_id] = date #Saving the current date in a dict
-    markup= create_calendar(now.year,now.month)
+    markup= create_calendar_inline(now.year, now.month)
     bot.send_message(message.chat.id, Messages.select_date, reply_markup=markup)
 
 
@@ -178,7 +178,7 @@ def teacher_search_handler(message):
 @bot.message_handler(commands=['week'])
 def week_select_handler(message):
     current_shown_weeks[message.chat.id] = datetime.now()
-    week_markup = create_week(datetime.now())
+    week_markup = create_week_inline(datetime.now())
     bot.send_message(message.chat.id, Messages.select_date, reply_markup=week_markup)
 
 ## INLINE QUERY HANDLE NEAREST PAIR
@@ -265,7 +265,7 @@ def callback_week(call):
         if (saved_date is not None):
             next_w = next_weekday(saved_date, 0)
             current_shown_weeks[chat_id] = next_w
-            markup = create_week(next_w)
+            markup = create_week_inline(next_w)
             bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
                               reply_markup=markup)
             bot.answer_callback_query(call.id, text="")
@@ -275,7 +275,7 @@ def callback_week(call):
         if (saved_date is not None):
             next_w = last_weekday(saved_date, 0)
             current_shown_weeks[chat_id] = next_w
-            markup = create_week(next_w)
+            markup = create_week_inline(next_w)
             bot.edit_message_text(Messages.select_date, call.from_user.id, call.message.message_id,
                               reply_markup=markup)
             bot.answer_callback_query(call.id, text="")
@@ -286,7 +286,7 @@ def callback_week(call):
 
         bot.edit_message_text(get_user_lessons_by_date(call.from_user.id, date),
                               call.from_user.id, call.message.message_id,
-                              reply_markup=create_week(current_shown_weeks[chat_id]),
+                              reply_markup=create_week_inline(current_shown_weeks[chat_id]),
                               parse_mode=ParseMode.MARKDOWN)
         bot.answer_callback_query(call.id, text="")
 
