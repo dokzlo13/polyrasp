@@ -1,12 +1,15 @@
 
 from functools import partial
 from telebot import types
-# from raspisator.bot import *
+from types import FunctionType
 
 from .templates import main_menu_button, back_button
 
 
 class Retry(Exception):
+    pass
+
+class NoMarkupError(Exception):
     pass
 
 def decor(method=None):
@@ -29,14 +32,11 @@ def decor(method=None):
 
         def __call__(self, message=None, **kwargs):
             if message.text == back_button:
-                # if hasattr(self._previous, '_previous') and not self._previous._previous:
-                #     # 2-steps back - return to MAIN
-                #     return self.main_menu(message)
                 if not self._previous:
                     return self.main_menu(message)
 
                 if self._previous.markup:
-                    self.bot.send_message(message.chat.id, self._previous.description, reply_markup=self._previous.markup)
+                    self.bot.send_message(message.chat.id, self._previous.description, reply_markup=self._previous.markup.body)
                 self.bot.register_next_step_handler_by_chat_id(message.chat.id, self._previous, **kwargs)
                 return
 
@@ -53,22 +53,27 @@ def decor(method=None):
                 kwargs = self.method(self.bot, message, **kwargs)
             except Retry as r:
                 print('Retry was raised in "{0}"'.format(self.description))
-                self.bot.send_message(message.chat.id, str(r), reply_markup=self.markup)
+                self.bot.send_message(message.chat.id, str(r), reply_markup=self.markup.body)
                 self.bot.register_next_step_handler_by_chat_id(message.chat.id, self, **kwargs)
                 return
 
             if not self._next:
-                # print('NO NEXT HANDLER')
-                # self.bot.send_message(message.chat.id, 'Спасибо!', reply_markup=types.ReplyKeyboardRemove(selective=False))
-                # self.bot.register_next_step_handler_by_chat_id(message.chat.id, self.main_menu)
-                # return
                 return self.main_menu(message)
 
-            if self._next.markup:
-                if isinstance(self._next.markup, DynamicMarkup):
-                    self._next.markup = kwargs.get('next_step_markup')
+            if not self._next.markup:
+                raise NoMarkupError("No markup aviable for step")
+
+            if isinstance(self._next.markup, DynamicMarkup):
+                next_mkp = kwargs.get('next_step_markup')
+                if next_mkp:
+                    self._next.markup.set_body(next_mkp)
                     del kwargs['next_step_markup']
-                self.bot.send_message(message.chat.id, self._next.description, reply_markup=self._next.markup)
+                elif self._next.markup.body != None:
+                    pass
+                else:
+                    raise NoMarkupError("No markup aviable for step")
+
+                self.bot.send_message(message.chat.id, self._next.description, reply_markup=self._next.markup.body)
             else:
                 self.bot.send_message(message.chat.id, 'Ашипка', reply_markup=types.ReplyKeyboardRemove(selective=False))
             self.bot.register_next_step_handler_by_chat_id(message.chat.id, self._next, **kwargs)
@@ -93,7 +98,6 @@ def decor(method=None):
 
     return wrapper(method)
 
-from types import FunctionType
 
 class Dialog:
 
@@ -146,13 +150,20 @@ class Dialog:
     #     return self._chain[0]
 
     def start(self, message):
-        self.bot.send_message(message.chat.id, self._chain[0].description, reply_markup=self._chain[0].markup)
+        self.bot.send_message(message.chat.id, self._chain[0].description, reply_markup=self._chain[0].markup.body)
         self.bot.register_next_step_handler_by_chat_id(message.chat.id, self._chain[0])
 
 
 class DynamicMarkup:
-    pass
+    def __init__(self):
+        self.body = None
 
+    def set_body(self, markup):
+        self.body = markup
+
+class StaticMarkup(DynamicMarkup):
+    def __init__(self, body):
+        self.set_body(body)
 #
 # def handle_init(message):
 #     d = Dialog()

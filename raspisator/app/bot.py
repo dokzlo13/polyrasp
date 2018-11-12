@@ -7,7 +7,7 @@ from pymongo import MongoClient
 
 from .shared.model import Studiesdata, Userdata
 from .dialogs import *
-from .chains import DynamicMarkup, Dialog
+from .chains import DynamicMarkup, StaticMarkup, Dialog
 from .worker import celery
 from .templates import ParseMode, Messages
 from .shared.timeworks import next_weekday, last_weekday, next_month, last_month
@@ -102,12 +102,12 @@ def handle_faculty_init(message):
 
     d = Dialog(globals={'m':studiesmodel, 'u':usersmodel})
     d.set_main_handler(handle_main_menu)
-    d.add_step(handle_facultie_group_selection, markup=gen_list_markup(faculties))
+    d.add_step(handle_facultie_group_selection, markup=StaticMarkup(gen_list_markup(faculties)))
     d.add_step(handle_group_kind, markup=DynamicMarkup())
     d.add_step(handle_group_type, markup=DynamicMarkup())
     d.add_step(handle_group_level, markup=DynamicMarkup())
     d.add_step(handle_group, markup=DynamicMarkup())
-    d.add_step(handle_group_commit, markup=gen_dict_markup(group_checkout_mapper))
+    d.add_step(handle_group_commit, markup=StaticMarkup(gen_dict_markup(group_checkout_mapper)))
     d.register_in_bot(bot)
     return d.start(message)
 
