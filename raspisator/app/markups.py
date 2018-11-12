@@ -127,7 +127,7 @@ def create_group_settings_markup(name, sub_id, sub_state):
     return markup
 
 
-def create_calendar(year,month):
+def create_calendar_inline(year, month):
     markup = types.InlineKeyboardMarkup()
     #First row - Month and Year
     row=[]
@@ -157,8 +157,17 @@ def create_calendar(year,month):
     markup.row(*row)
     return markup
 
+def create_month_back_inline(date):
+    markup = types.InlineKeyboardMarkup()
+    row = []
+    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="calendar-back-to-calendar"))
+    row.append(types.InlineKeyboardButton(date.strftime("%A, %d %B %Y"), callback_data="ignore"))
+    row.append(types.InlineKeyboardButton("Закрыть",callback_data="dialog-close"))
+    markup.row(*row)
+    return markup
 
-def create_week(date):
+
+def create_week_inline(date):
     markup = types.InlineKeyboardMarkup()
     week = list(full_week(date))
 
