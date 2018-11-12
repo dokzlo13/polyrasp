@@ -101,6 +101,7 @@ class Userdata:
             ]
 
         if sub_id:
+            query.append({"$unwind": "$subscription"})
             query.append({'$match': {'subscription._id': ObjectId(sub_id)}})
 
         subs = self.users.aggregate(query)
@@ -109,7 +110,10 @@ class Userdata:
         except StopIteration:
             return []
         else:
-            return subs['subscription']
+            if isinstance(subs['subscription'], (list, tuple)):
+                return subs['subscription']
+            else:
+                return [subs['subscription']]
 
     def get_all_users_subscribes(self):
         data = []
