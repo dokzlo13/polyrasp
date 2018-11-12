@@ -131,6 +131,9 @@ class Userdata:
     def delete_unused_subscriptions(self):
         return self.subscriptions.remove({'_id': {'$in': [i['_id'] for i in self.get_unused_subscriptions()]}})
 
+    def purge_subscription_timeouts(self):
+        return self.subscriptions.update_many({}, {'$set': {'upd_time': datetime.min}})
+
 class Studiesdata:
     def __init__(self, db):
         self.db = db
