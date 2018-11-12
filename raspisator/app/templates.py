@@ -9,11 +9,10 @@ type_mapper = {'Очная': 'common', 'Заочная': 'distance', 'Очно-�
 level_mapper = {'1 Курс': 1, '2 Курс': 2, '3 Курс': 3, '4 Курс': 4, '5 Курс': 5, '6 Курс': 6}
 group_checkout_mapper = {emoj(':white_check_mark: Сохранить группу'): 1}
 main_menu = {'nearset': emoj(':mega: Ближайшие пары'),
-             'plan': emoj(':notebook_with_decorative_cover: Расписание'),
+             'plan': emoj(':clipboard:'),
              'settings': emoj(':wrench: Настройки'),
-             'subs': emoj(':books: Мои группы'),
-             'renew': emoj(':arrows_counterclockwise: Обновить расписания'),
-             'add': emoj(':pencil: Добавить группу'),
+             'subs': emoj(':books:'),
+             'renew': emoj(':arrows_counterclockwise:'),
              'week': emoj(':calendar: Неделя')}
 
 groups_menu = {
@@ -35,7 +34,7 @@ class Messages:
     no_schedule =  "Извините, активных расписаний для Вас не найдено!\n Попробуйте добавить группу /add"
     faculties_unaviable = "Извините, на данный момент нет информации о расписаниях, попробуйте позже!"
     schedule_will_be_updated = '*Информация о вашем расписании будет обновлена!*'
-    welcome = "Добро пожаловать!"
+    welcome = emoj("Добро пожаловать!\n:books: - *Мои группы*\n:arrows_counterclockwise: - *Обновить расписание*\n:clipboard: - *Расписание*")
     what_to_do = "*Что необходимо сделать?*"
     hello = "Привет! Проверь список своих подписок. Для изменения настроек используй /subs"
     settings = "Настройки групп"
@@ -43,7 +42,7 @@ class Messages:
 
     @staticmethod
     def schedule_for(date):
-        return "*Расписание на {0}:*".format(date.strftime("%Y-%m-%d"))
+        return "*Расписание на {0}:*".format(date.strftime("%A, %d %B %Y"))
 
 class ParseMode(object):
     """This object represents a Telegram Message Parse Modes."""
@@ -62,7 +61,7 @@ def get_teacher_short(teacher_data):
 
 def lessons_template(data, markup=True):
     text = ""
-
+    # TODO: Add groups to text, if group list different
     text += "{% if data[0] %}{% if data[0]['groups'] %}\n:two_men_holding_hands: {% endif %}"
     text += "{% for group in data[0]['groups']%}"
     text += "{% if group['name'] %}"
