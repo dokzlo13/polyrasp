@@ -16,13 +16,17 @@ main_menu = {'nearset': emoj(':mega: Ближайшие пары'),
              'add': emoj(':pencil: Добавить группу'),
              'week': emoj(':calendar: Неделя')}
 
+groups_menu = {
+    'add': emoj(':pencil: Добавить группу'),
+    'settings': emoj(':wrench: Настроить группы')
+}
+
 search_menu = {'teacher': emoj(':ok_woman: Поиск по преподавателю'),
                'calendar': emoj(':calendar: Календарь')}
 
 
 main_menu_button = emoj(':house: Главное меню')
 back_button = emoj(':arrow_backward: Назад')
-group_setting_button = emoj(':wrench: Настроить группы')
 
 
 class Messages:

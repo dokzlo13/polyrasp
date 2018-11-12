@@ -328,12 +328,12 @@ def callback_calendar(call):
 def _(message):
     return handle_main_menu(message)
 
-@bot.message_handler(func= lambda message: message.text == group_setting_button)
+@bot.message_handler(func= lambda message: message.text == groups_menu['settings'])
 def _(message):
     return group_settings_handler(message)
     # return handle_main_menu(message)
 
-@bot.message_handler(func= lambda message: message.text == main_menu['add'])
+@bot.message_handler(func= lambda message: message.text == groups_menu['add'])
 def _(message):
     return handle_faculty_init(message)
 

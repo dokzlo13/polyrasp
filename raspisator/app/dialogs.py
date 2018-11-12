@@ -8,19 +8,17 @@ from .chains import Retry
 from .shared.timeworks import convert_concat_day_and_lesson
 
 from .worker import celery
-# from deferred import get_subscribtion
-# from deferred import get_teacher_search, get_teacher_lessons
 
 
 def handle_facultie_group_selection(bot, message, **kwargs):
     "Выберите институт:"
+    bot.send_chat_action(message.chat.id, 'typing')
     m = kwargs.get('m')
     facult = m.get_facultie_by_facultie_name(message.text)
     if not facult:
         raise Retry("В данном институте нет групп, выберите другой институт")
-
-    bot.send_message(message.chat.id, "Ищу группы для {0}".format(facult['abbr']),
-                           reply_markup=types.ReplyKeyboardRemove())
+    # bot.send_message(message.chat.id, "Ищу группы для {0}".format(facult['abbr']),
+    #                        reply_markup=types.ReplyKeyboardRemove())
     groups = m.get_groups_by(fac_id=facult['id'])
 
     if not groups:

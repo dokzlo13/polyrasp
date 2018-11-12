@@ -1,7 +1,7 @@
 import calendar
 
 from telebot import types
-from .templates import main_menu, emoj, main_menu_button, back_button, group_setting_button, search_menu
+from .templates import main_menu, emoj, main_menu_button, back_button, search_menu, groups_menu
 from .templates import lessons_template, short_group
 from .shared.timeworks import full_week
 
@@ -40,13 +40,12 @@ def gen_search_menu_markup():
 def gen_main_menu_markup():
     markup = types.ReplyKeyboardMarkup(row_width=2)
     markup.row(types.KeyboardButton(main_menu['nearset']), types.KeyboardButton(main_menu['week']))
-    markup.row(types.KeyboardButton(main_menu['plan']))
-    markup.row(types.KeyboardButton(main_menu['subs']))
-    markup.row(types.KeyboardButton(main_menu['renew']))
-    # markup.row(types.KeyboardButton(main_menu['settings']))
-    # markup.row(types.KeyboardButton(main_menu['add']))
+    row = []
+    row.append(types.KeyboardButton(main_menu['plan']))
+    row.append(types.KeyboardButton(main_menu['subs']))
+    row.append(types.KeyboardButton(main_menu['renew']))
+    markup.row(*row)
     return markup
-
 
 def gen_inline_groups_markup(subs, lessons):
     groups_inline = []
@@ -87,8 +86,8 @@ def gen_groups_settings_markup(subs):
 
 def gen_groups_settings_info():
     markup = types.ReplyKeyboardMarkup(row_width=1)
-    markup.row(types.KeyboardButton(group_setting_button))
-    markup.row(types.KeyboardButton(main_menu['add']))
+    markup.row(types.KeyboardButton(groups_menu['settings']))
+    markup.row(types.KeyboardButton(groups_menu['add']))
     markup.row(types.KeyboardButton(main_menu_button))
     return markup
 
