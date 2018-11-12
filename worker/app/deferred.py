@@ -108,8 +108,9 @@ def process_subs(s, u, subs_list, force=False):
             print('Timeout isn\'t passed')
             continue
         updates[sub['id']] = {}
-        for week in  strf_list(get_weeks_range(WEEKS_DEPTH)):
-            lessons = collect_lessons_data(sub['facultie'], sub['id'], params={'date': week})
+        # [None] means current week
+        for week in  [None] + strf_list(get_weeks_range(WEEKS_DEPTH)):
+            lessons = collect_lessons_data(sub['facultie'], sub['id'], params={'date': week} if week!=None else {})
             if not lessons:
                 continue
             upd = s.check_add_lessons(lessons, sub_id=str(sub['_id']))
