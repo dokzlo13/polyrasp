@@ -2,15 +2,19 @@ import os
 import locale
 import telebot
 import logging
+from datetime import datetime
 
 from pymongo import MongoClient
 
 from .shared.model import Studiesdata, Userdata
+from .shared.timeworks import next_weekday, last_weekday, next_month, last_month
+
+from .markups import *
 from .dialogs import *
+from .templates import lessons_template, selected_group_message, group_checkout_mapper
 from .chains import DynamicMarkup, StaticMarkup, Dialog
 from .worker import celery
-from .templates import ParseMode, Messages
-from .shared.timeworks import next_weekday, last_weekday, next_month, last_month
+from .templates import ParseMode, Messages, main_menu, groups_menu, search_menu, main_menu_button
 
 locale.setlocale(locale.LC_ALL, ('RU','UTF8'))
 
