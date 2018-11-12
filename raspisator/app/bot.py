@@ -227,7 +227,7 @@ def callback_settings(call):
         sub_id = call.data[6:]
         removed_group = usersmodel.delete_subscription(call.from_user.id, sub_id)
         subs =  usersmodel.get_subsciptions(tel_user=call.from_user.id)
-        bot.send_message(call.message.chat.id, text='Группа {0} удалена из ваших подписок!'.format(removed_group),)
+        bot.answer_callback_query(call.id, text=Messages.removed_group(removed_group))
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               reply_markup=gen_groups_settings_markup(subs), text=Messages.please_select_group)
 
