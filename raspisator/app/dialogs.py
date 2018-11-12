@@ -1,3 +1,5 @@
+import inspect
+import sys
 from datetime import datetime
 
 from .templates import ParseMode
@@ -160,3 +162,7 @@ def handle_teacher_date(bot, message, **kwargs):
     result = lessons_template(lessons)
     bot.send_message(message.chat.id, result, parse_mode=ParseMode.MARKDOWN)
     return kwargs
+
+# Allowing to import only functions, described in whis module
+__all__ = [m[0] for m in inspect.getmembers(sys.modules[__name__], inspect.isfunction)
+               if m[1].__module__ == inspect.getmodule(sys.modules[__name__]).__name__]

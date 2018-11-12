@@ -1,3 +1,5 @@
+import inspect
+import sys
 import calendar
 
 from telebot import types
@@ -179,3 +181,7 @@ def create_week(date):
     markup.row(*row)
 
     return markup
+
+# Allowing to import only functions, described in whis module
+__all__ = [m[0] for m in inspect.getmembers(sys.modules[__name__], inspect.isfunction)
+               if m[1].__module__ == inspect.getmodule(sys.modules[__name__]).__name__]
