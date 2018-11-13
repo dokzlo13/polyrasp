@@ -96,7 +96,7 @@ def handle_group_commit(bot, message, **kwargs):
     group = kwargs.get('group')
     confirm = group_checkout_mapper.get(message.text)
     if confirm:
-        sub = u.add_subscription(message.from_user.id, group, message.chat.id)
+        sub = u.add_subscription(message.from_user.id, message.chat.id, group)
         celery.send_task('deferred.get_subscribtion', args=[str(sub)])
 
         text = 'Ваша группа добавлена в список подписок!\nПросмотреть все подписки можно командой /subs' \
