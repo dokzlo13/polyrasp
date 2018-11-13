@@ -101,6 +101,7 @@ def handle_faculty_init(message):
 
     if not faculties:
         bot.send_message(message.chat.id, Messages.faculties_unaviable)
+        celery.send_task('deferred.get_groups_schema')
         return
 
     d = Dialog(globals={'m':studiesmodel, 'u':usersmodel})
