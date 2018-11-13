@@ -213,14 +213,14 @@ def callback_settings(call):
     if call.data.startswith('subscription-'):
         sub_id = call.data[13:]
         sub, info = usersmodel.get_user_subscription_settings(call.from_user.id, sub_id)
-        markup = create_group_settings_markup(sub['name'], sub_id, info['notify'])
+        markup = create_group_settings_markup(sub['name'], sub_id, info)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               reply_markup=markup, text="Управление подпиской")
 
     if call.data.startswith('push-'):
         sub_id = call.data[5:]
         sub, info = usersmodel.change_notification_state(call.from_user.id, sub_id)
-        markup = create_group_settings_markup(sub['name'], sub_id, sub['notify'])
+        markup = create_group_settings_markup(sub['name'], sub_id, info)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               reply_markup=markup, text="Управление подпиской")
 
@@ -234,12 +234,25 @@ def callback_settings(call):
 
     if call.data.startswith('groupinfo-'):
         sub_id = call.data[10:]
-        subs = get_sub(call.from_user.id, sub_id)
-        text = selected_group_message(subs)
-        bot.send_message(call.message.chat.id, text=text, parse_mode=ParseMode.MARKDOWN)
+        sub, info = usersmodel.get_user_subscription_settings(call.from_user.id, sub_id)
+        markup = create_group_settings_markup(sub['name'], str(sub['_id']), info)
+        text = selected_group_message(sub)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              reply_markup=markup, text=text, parse_mode=ParseMode.MARKDOWN)
 
-    # if call.data.startswith('close'):
-    #     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    if call.data.startswith('group-default-'):
+        sub_id = call.data[14:]
+        if usersmodel.get_user_default_group(call.from_user.id) == sub_id:
+            bot.answer_callback_query(call.id, text=Messages.already_default_group)
+            return
+        else:
+            usersmodel.set_user_default_group(call.from_user.id, sub_id)
+            sub, info = usersmodel.get_user_subscription_settings(call.from_user.id, sub_id)
+            markup = create_group_settings_markup(sub['name'], sub_id, info)
+            bot.answer_callback_query(call.id, text=Messages.setted_default_group)
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                  reply_markup=markup, text="Управление подпиской")
+
 
     if call.data.startswith('back'):
         subs = usersmodel.get_subsciptions(tel_user=call.from_user.id,)

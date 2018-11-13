@@ -39,6 +39,8 @@ class Messages:
     hello = "Привет! Проверь список своих подписок. Для изменения настроек используй /subs"
     settings = "Настройки групп"
     please_select_group = "Пожалуйста, выберите группу"
+    already_default_group = emoj(":white_check_mark: Группа уже по-умолчанию")
+    setted_default_group = emoj(":white_check_mark: Группа выбрана по-умолчанию")
 
     @staticmethod
     def schedule_for(date):
