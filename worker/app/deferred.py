@@ -139,7 +139,7 @@ def get_subscribtion(sub_id):
 def get_user_subscribtion(tel_user):
     with StudiesStandalone() as s, \
             UserStandalone() as u:
-        updates = process_subs(s, u, u.get_subsciptions(tel_user=tel_user))
+        updates = process_subs(s, u, u.get_subscriptions(tel_user=tel_user))
     return updates
 
 
