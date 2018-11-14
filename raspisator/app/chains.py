@@ -24,7 +24,7 @@ def decor(method=None):
             self.method = method
             self.main_menu = None
             self.bot = None
-            self.markup = None
+            self.markup = StaticMarkup(None)
             self._next = None
             self._previous = None
             self.globals = {}
@@ -91,7 +91,7 @@ def decor(method=None):
             self.main_menu = handler
 
         def set_markup(self, markup):
-            self.markup = markup
+            self.markup = markup if markup != None else StaticMarkup(None)
 
         def set_globals(self, globals):
             self.globals.update(globals)

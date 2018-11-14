@@ -5,7 +5,7 @@ from datetime import datetime
 from telebot import types
 
 from .templates import ParseMode
-from .templates import selected_group_message
+from .templates import selected_group_message, lessons_template
 from .templates import level_mapper, type_mapper, kind_mapper, group_checkout_mapper
 from .markups import *
 from .chains import Retry

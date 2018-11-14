@@ -169,6 +169,7 @@ def create_month_back_inline(date):
 
 
 def create_week_inline(date, current_group=None):
+    current_group = current_group or ''
     markup = types.InlineKeyboardMarkup()
     week = list(full_week(date))
 
@@ -188,7 +189,7 @@ def create_week_inline(date, current_group=None):
                     callback_data="ignore")
     )
     row.append(types.InlineKeyboardButton(
-            current_group, callback_data="change-group"
+            current_group, callback_data="change-group-init"
     ))
     markup.row(*row)
     row=[]
