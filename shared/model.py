@@ -88,11 +88,17 @@ class Userdata:
         if not subs:
             return [], {}
 
-        q = [
-            {"$unwind": "$subscription_settings"},
-            {"$match": {'uid': int(tel_user), "subscription_settings.id": subs[0]['_id']}},
-            {"$project": {"subscription_settings": 1, '_id':0}}
-        ]
+        if sub_id:
+            q = [
+                {"$unwind": "$subscription_settings"},
+                {"$match": {'uid': int(tel_user), "subscription_settings.id": subs[0]['_id']}},
+                {"$project": {"subscription_settings": 1, '_id':0}}
+            ]
+        else:
+            q = [
+                {"$match": {'uid': int(tel_user)}},
+                {"$project": {"subscription_settings": 1, '_id': 0}}
+            ]
 
         try:
             user_sub_settings = next(self.users.aggregate(q))['subscription_settings']
@@ -101,7 +107,10 @@ class Userdata:
         except KeyError:
             return [], {}
         else:
-            return subs[0], user_sub_settings
+            if sub_id:
+                return subs[0], user_sub_settings
+            else:
+                return zip(subs, user_sub_settings)
 
     def change_notification_state(self, tel_user, sub_id):
         sub, settings = self.get_user_subscription_settings(tel_user, sub_id)
