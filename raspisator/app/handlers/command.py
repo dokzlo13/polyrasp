@@ -35,7 +35,7 @@ class CommandHandlers(HandleMiddleware):
     def _init_user(self, message):
         username = message.from_user.username if message.from_user.username else message.from_user.first_name
         user = self.u.create_or_get_user(message.from_user.id, username)
-        subs = self.u.get_subscriptions(db_user=user)
+        subs = list(self.u.get_subscriptions(db_user=user))
         return user, subs
 
     def start_handler(self, message):

@@ -57,8 +57,14 @@ class Userdata:
     def get_sub_by_string_id(self, sub_id):
         return self.subscriptions.find_one({'_id': ObjectId(sub_id)})
 
-    def get_all_subs(self):
-        return self.subscriptions.find()
+    def get_all_subs(self, string_id=False):
+        raw = self.subscriptions.find()
+        if string_id:
+            for item in raw:
+                item.update({'_id': str(item['_id'])})
+                yield item
+        else:
+            yield from raw
 
     def update_subscription_acces_time(self, sub_id):
         self.subscriptions.update({'_id': ObjectId(sub_id)},
@@ -71,10 +77,7 @@ class Userdata:
                           {"$pull": {'subscription_settings': {"id": ObjectId(sub_id)}}})
         if self.get_user_default_group(tel_user) == str(sub_id):
             # If user has another group (only one) - select this group as default
-            aviable = self.get_subscriptions(tel_user=tel_user)
-
-            print(aviable)
-
+            aviable = list(self.get_subscriptions(tel_user=tel_user))
             if len(aviable) == 1:
                 print('SET TO ', aviable[0]['_id'])
                 self.set_user_default_group(tel_user, aviable[0]['_id'])
@@ -84,7 +87,7 @@ class Userdata:
 
 
     def get_user_subscription_settings(self, tel_user=None, sub_id=None):
-        subs = self.get_subscriptions(tel_user=tel_user, sub_id=sub_id)
+        subs = list(self.get_subscriptions(tel_user=tel_user, sub_id=sub_id))
         if not subs:
             return [], {}
 
@@ -121,7 +124,7 @@ class Userdata:
         settings.update({"notify": not settings['notify']})
         return sub, settings
 
-    def get_subscriptions(self, *, tel_user=None, db_user=None, sub_id=None):
+    def get_subscriptions(self, *, tel_user=None, db_user=None, sub_id=None, string_id=False):
 
         query = [
                 {'$match': {'uid': int(tel_user)}} if tel_user else {'$match': {'_id': db_user}},
@@ -144,12 +147,19 @@ class Userdata:
         try:
             subs = next(subs)
         except StopIteration:
-            return []
+            yield
         else:
             if isinstance(subs['subscription'], (list, tuple)):
-                return subs['subscription']
+                raw = subs['subscription']
             else:
-                return [subs['subscription']]
+                raw = [subs['subscription']]
+
+        if string_id:
+            for item in raw:
+                item.update({'_id': str(item['_id'])})
+                yield item
+        else:
+            yield from raw
 
     def get_all_users_subscribes(self):
         data = []

@@ -1,5 +1,5 @@
 import os
-from celery import Celery
+from celery import Celery, group
 from celery.schedules import crontab
 from datetime import datetime, timedelta
 import locale
@@ -101,16 +101,18 @@ def collect_lessons_data(facult, id_, params=None):
     return lessons
 
 
-def process_subs(s, u, subs_list, force=False):
+@app.task
+def process_sub(sub, force=False):
     updates = {}
-    for sub in subs_list:
+    with StudiesStandalone() as s, \
+            UserStandalone() as u:
         if not force and not timeout_has_passed(sub, RENEW_TIMEOUT):
             print('Timeout isn\'t passed')
-            continue
+            return
         updates[sub['id']] = {}
         # [None] means current week
-        for week in  [None] + strf_list(get_weeks_range(WEEKS_DEPTH)):
-            lessons = collect_lessons_data(sub['facultie'], sub['id'], params={'date': week} if week!=None else {})
+        for week in [None] + strf_list(get_weeks_range(WEEKS_DEPTH)):
+            lessons = collect_lessons_data(sub['facultie'], sub['id'], params={'date': week} if week != None else {})
             if not lessons:
                 continue
             upd = s.check_add_lessons(lessons, sub_id=str(sub['_id']))
@@ -121,26 +123,23 @@ def process_subs(s, u, subs_list, force=False):
 
 @app.task(name='deferred.get_all_subscibtions_data')
 def get_all_subscibtions_data(force=False):
-    with StudiesStandalone() as s, \
-            UserStandalone() as u:
-        updates = process_subs(s, u, u.get_all_subs(), force=force)
-    return updates
-
+    with UserStandalone() as u:
+        res = group([process_sub.s(i, force=force) for i in u.get_all_subs(string_id=True)]).delay()
+    return res
 
 @app.task(name='deferred.get_subscribtion')
 def get_subscribtion(sub_id):
-    with StudiesStandalone() as s, \
-            UserStandalone() as u:
-        updates = process_subs(s, u, [u.get_sub_by_string_id(sub_id=sub_id)])
+    with UserStandalone() as u:
+        updates = process_sub(u.get_sub_by_string_id(sub_id=sub_id))
     return updates
 
 
 @app.task(name='deferred.get_user_subscribtion')
 def get_user_subscribtion(tel_user):
-    with StudiesStandalone() as s, \
-            UserStandalone() as u:
-        updates = process_subs(s, u, u.get_subscriptions(tel_user=tel_user))
-    return updates
+    with UserStandalone() as u:
+        res = group([process_sub.s(i) for i in u.get_subscriptions(tel_user=tel_user, string_id=True)]).delay()
+    # updates = process_subs(s, u, u.get_subscriptions(tel_user=tel_user))
+        return res
 
 
 @app.task(name='deferred.get_teacher_search')

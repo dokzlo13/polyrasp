@@ -2,7 +2,16 @@
 from datetime import datetime, timedelta
 
 def timeout_has_passed(sub, renew_time):
-    return  sub.get('upd_time') is None or (datetime.now() - sub["upd_time"]).seconds > renew_time
+    if  sub.get('upd_time') is None or \
+            not sub.get('upd_time'):
+        return False
+    date = sub['upd_time']
+    if isinstance(date, str):
+        try:
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
+        except ValueError:
+            date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
+    return (datetime.now() - date).seconds > renew_time
 
 def next_weekday(date, weekday):
     day_gap = weekday - date.weekday()

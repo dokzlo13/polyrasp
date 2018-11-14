@@ -65,7 +65,7 @@ class SettingsInline(InlineParser):
 
     def unsub(self, call, *args):
         self.u.delete_subscription(call.from_user.id, args[0])
-        subs = self.u.get_subscriptions(tel_user=call.from_user.id)
+        subs = list(self.u.get_subscriptions(tel_user=call.from_user.id))
         self.bot.answer_callback_query(call.id, text=Messages.removed_group())
         self.bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               reply_markup=gen_groups_settings_markup(subs), text=Messages.please_select_group)
@@ -93,7 +93,7 @@ class SettingsInline(InlineParser):
                                   reply_markup=markup, text="Управление подпиской")
 
     def back(self, call, *args):
-        subs = self.u.get_subscriptions(tel_user=call.from_user.id, )
+        subs = list(self.u.get_subscriptions(tel_user=call.from_user.id, ))
         self.bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               reply_markup=gen_groups_settings_markup(subs), text=Messages.please_select_group)
 
