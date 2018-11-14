@@ -71,16 +71,19 @@ def get_teacher_short(teacher_data):
 def lessons_template(data, markup=True):
     text = ""
     # TODO: Add groups to text, if group list different
-    text += "{% if data[0] %}{% if data[0]['groups'] %}\n:two_men_holding_hands: {% endif %}"
-    text += "{% for group in data[0]['groups']%}"
+    text += "{% if data[0] %}\n:calendar: "
+    text += "*{{  data[0]['time_start'].strftime('%A, %d %B') }}* \n" if markup \
+        else "{{  data[0]['time_start'].strftime('%A, %d %B') }} \n"
+    text += "{% endif %}"
+
+    text += "{% for lesson in data %}"
+    text += "{% if lesson['groups'] %}\n:two_men_holding_hands: {% endif %}"
+    text += "{% for group in lesson['groups']%}"
     text += "{% if group['name'] %}"
     text += "*{{ group['name'] }}*, " if markup else "{{ group['name'] }}, "
     text += "{% endif %}"
     text += "{% endfor %}"
-    text += "{% endif %}"
-    text += "\n:calendar: {{  data[0]['time_start'].strftime('%A, %d %B') }} \n"
 
-    text += "{% for lesson in data %}"
     text += "{% if lesson['additional_info'] %}\n:information_source: {{lesson['additional_info']}}{% endif %}"
     text += "\n:pencil: *{{ lesson['subject']}}*" if markup else "\n:pencil: {{ lesson['subject']}}"
     text += "\n:mag_right: _{{ lesson['typeObj']['name'] }}_ " if markup else "\n:mag_right: {{ lesson['typeObj']['name'] }} "
