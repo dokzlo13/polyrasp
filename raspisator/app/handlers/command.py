@@ -118,7 +118,13 @@ class CommandHandlers(HandleMiddleware):
         now = datetime.now()  # Current date
         date = (now.year, now.month)
         self.cache.set_user_cal(message.from_user.id, date)
-        markup = create_calendar_inline(now.year, now.month)
+        default_group = self.u.get_user_default_group(message.from_user.id)
+        self.cache.set_user_curr_gr(message.from_user.id, default_group)
+        sub, _ = self.u.get_user_subscription_settings(
+                message.from_user.id,
+                default_group
+        )
+        markup = create_calendar_inline(now.year, now.month, sub['name'])
         self.bot.send_message(message.chat.id, Messages.select_date, reply_markup=markup)
 
     def teacher_handler(self, message):
@@ -132,9 +138,11 @@ class CommandHandlers(HandleMiddleware):
 
     def week_handler(self, message):
         self.cache.set_user_week(message.from_user.id, datetime.now())
+        default_group = self.u.get_user_default_group(message.from_user.id)
+        self.cache.set_user_curr_gr(message.from_user.id, default_group)
         sub, _ = self.u.get_user_subscription_settings(
                 message.from_user.id,
-                self.u.get_user_default_group(message.from_user.id)
+                default_group
         )
         week_markup = create_week_inline(datetime.now(), sub['name'])
         self.bot.send_message(message.chat.id, Messages.select_date, reply_markup=week_markup)
