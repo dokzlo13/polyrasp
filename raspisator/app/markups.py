@@ -175,7 +175,7 @@ def create_week_inline(date, current_group=None):
 
     row=[]
     for day in week:
-        row.append(types.InlineKeyboardButton(day.strftime("%a"), callback_data="week-day-" + day.strftime("%Y-%m-%d")))
+        row.append(types.InlineKeyboardButton(day.strftime("%a"), callback_data="week-day-" + day.strftime("%Y.%m.%d")))
     markup.row(*row)
 
     # row=[]

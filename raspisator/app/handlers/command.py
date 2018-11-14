@@ -116,9 +116,8 @@ class CommandHandlers(HandleMiddleware):
 
     def cal_handler(self, message):
         now = datetime.now()  # Current date
-        chat_id = message.chat.id
         date = (now.year, now.month)
-        current_shown_dates[chat_id] = date  # Saving the current date in a dict
+        self.cache.set_user_cal(message.from_user.id, date)
         markup = create_calendar_inline(now.year, now.month)
         self.bot.send_message(message.chat.id, Messages.select_date, reply_markup=markup)
 
@@ -132,7 +131,7 @@ class CommandHandlers(HandleMiddleware):
         return d.start(message)
 
     def week_handler(self, message):
-        current_shown_weeks[message.chat.id] = datetime.now()
+        self.cache.set_user_week(message.from_user.id, datetime.now())
         sub, _ = self.u.get_user_subscription_settings(
                 message.from_user.id,
                 self.u.get_user_default_group(message.from_user.id)

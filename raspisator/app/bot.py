@@ -8,9 +8,10 @@ from pymongo import MongoClient
 from .shared.model import Studiesdata, Userdata
 from .shared.timeworks import next_month, last_month
 
-from .worker import celery
+from .worker import celery, redis
 from .templates import ParseMode, Messages, main_menu, groups_menu, search_menu, main_menu_button
 from .handlers import CommandHandlers, CommandsAliases, InlineHandlers
+from .cache import Cache
 
 locale.setlocale(locale.LC_ALL, ('RU','UTF8'))
 
@@ -34,11 +35,26 @@ logger.warning("Database connected" if 'ok' in conn.server_info() and
 db = conn.get_database(MONGO_DB)
 studiesmodel = Studiesdata(db)
 usersmodel = Userdata(db)
+cache = Cache(redis)
 
 
-handlers = CommandHandlers(bot, usersmodel=usersmodel, studiesmodel=studiesmodel, celery=celery)
-CommandsAliases(handlers, search_menu, main_menu, groups_menu, {'main': main_menu_button})
-InlineHandlers(bot, usersmodel=usersmodel, studiesmodel=studiesmodel, celery=celery)
+handlers = CommandHandlers(bot,
+                           usersmodel=usersmodel,
+                           studiesmodel=studiesmodel,
+                           celery=celery,
+                           cache=cache)
+
+CommandsAliases(handlers,
+                search_menu,
+                main_menu,
+                groups_menu,
+                {'main': main_menu_button})
+
+InlineHandlers(bot,
+               usersmodel=usersmodel,
+               studiesmodel=studiesmodel,
+               celery=celery,
+               cache=cache)
 
 ## INLINE QUERY HANDLE NEAREST PAIR
 
