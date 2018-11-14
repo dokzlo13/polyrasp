@@ -56,9 +56,16 @@ class Messages:
     setted_default_group = emoj(":white_check_mark: Группа выбрана по-умолчанию")
     group_select_succeed = emoj(":white_check_mark: Группа для показа информации выбрана")
 
+    time_template = "%A, %d %B %Y"
+    teacher_time_template = emoj(":calendar: %A, %d %B %Y")
+
+    @staticmethod
+    def teacher_date_templ(date):
+        return emoj(":calendar: {0}".format(date.strftime(Messages.time_template)))
+
     @staticmethod
     def schedule_for(date):
-        return "*Расписание на {0}:*".format(date.strftime("%A, %d %B %Y"))
+        return "*Расписание на {0}:*".format(date.strftime(Messages.time_template))
 
     @staticmethod
     def removed_group(removed_group=None):
