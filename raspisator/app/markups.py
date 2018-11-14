@@ -34,14 +34,14 @@ def gen_list_markup(list_, key=None, back=True):
 def gen_search_menu_markup():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.row(types.KeyboardButton(search_menu['teacher']))
-    markup.row(types.KeyboardButton(search_menu['calendar']))
+    markup.row(types.KeyboardButton(search_menu['cal']))
     markup.row(types.KeyboardButton(main_menu_button))
     return markup
 
 
 def gen_main_menu_markup():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    markup.row(types.KeyboardButton(main_menu['nearset']), types.KeyboardButton(main_menu['week']))
+    markup.row(types.KeyboardButton(main_menu['nearest']), types.KeyboardButton(main_menu['week']))
     row = []
     row.append(types.KeyboardButton(main_menu['plan']))
     row.append(types.KeyboardButton(main_menu['subs']))
@@ -90,7 +90,7 @@ def gen_groups_settings_markup(subs):
 
 def gen_groups_settings_info():
     markup = types.ReplyKeyboardMarkup(row_width=1)
-    markup.row(types.KeyboardButton(groups_menu['settings']))
+    markup.row(types.KeyboardButton(groups_menu['groupset']))
     markup.row(types.KeyboardButton(groups_menu['add']))
     markup.row(types.KeyboardButton(main_menu_button))
     return markup
@@ -115,7 +115,7 @@ def create_group_settings_markup(name, sub_id, sub_state):
 
     row.append(types.InlineKeyboardButton(emoj(':white_check_mark: По-умолчанию') if sub_state['default']
                                           else emoj(':white_medium_square: По-умолчанию'),
-                                          callback_data='settings-group-default-'+sub_id))
+                                          callback_data='settings-groupdefault-'+sub_id))
 
     row.append(types.InlineKeyboardButton(emoj(":x: В разработке :x:"),
                                           callback_data='settings-back'))
@@ -161,7 +161,7 @@ def create_calendar_inline(year, month):
 def create_month_back_inline(date):
     markup = types.InlineKeyboardMarkup()
     row = []
-    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="calendar-back-to-calendar"))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="calendar-back_to_calendar"))
     row.append(types.InlineKeyboardButton(date.strftime("%A, %d %B %Y"), callback_data="ignore"))
     row.append(types.InlineKeyboardButton("Закрыть",callback_data="dialog-close"))
     markup.row(*row)

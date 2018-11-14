@@ -8,7 +8,7 @@ kind_mapper = {'Бакалавриат': 0, 'Магистратура': 1, 'Сп
 type_mapper = {'Очная': 'common', 'Заочная': 'distance', 'Очно-Заочная': 'evening'}
 level_mapper = {'1 Курс': 1, '2 Курс': 2, '3 Курс': 3, '4 Курс': 4, '5 Курс': 5, '6 Курс': 6}
 group_checkout_mapper = {emoj(':white_check_mark: Сохранить группу'): 1}
-main_menu = {'nearset': emoj(':mega: Ближайшие пары'),
+main_menu = {'nearest': emoj(':mega: Ближайшие пары'),
              'plan': emoj(':clipboard:'),
              'settings': emoj(':wrench: Настройки'),
              'subs': emoj(':books:'),
@@ -17,11 +17,11 @@ main_menu = {'nearset': emoj(':mega: Ближайшие пары'),
 
 groups_menu = {
     'add': emoj(':pencil: Добавить группу'),
-    'settings': emoj(':wrench: Настроить группы')
+    'groupset': emoj(':wrench: Настроить группы')
 }
 
 search_menu = {'teacher': emoj(':ok_woman: Поиск по преподавателю'),
-               'calendar': emoj(':calendar: Календарь')}
+               'cal': emoj(':calendar: Календарь')}
 
 
 main_menu_button = emoj(':house: Главное меню')
