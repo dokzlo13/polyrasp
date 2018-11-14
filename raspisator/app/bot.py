@@ -45,7 +45,7 @@ current_shown_weeks = {}
 
 def get_user_lessons_by_date(uid, date):
     lessons = []
-    for sub in usersmodel.get_subsciptions(tel_user=uid):
+    for sub in usersmodel.get_subscriptions(tel_user=uid):
         lessons.append(studiesmodel.get_lessons_in_day(sub["id"], date))
 
     if all([lesson == [] for lesson in lessons]):
@@ -70,7 +70,7 @@ def handle_init(message):
 def init_user(message):
     username =  message.from_user.username if message.from_user.username else message.from_user.first_name
     user = usersmodel.create_or_get_user(message.from_user.id, username)
-    subs = usersmodel.get_subsciptions(db_user=user)
+    subs = usersmodel.get_subscriptions(db_user=user)
     return user, subs
 
 @bot.message_handler(commands=['subs'])
@@ -186,7 +186,7 @@ def week_select_handler(message):
 
 @bot.inline_handler(lambda query: query.query == '')
 def query_text(inline_query):
-    subs = usersmodel.get_subsciptions(tel_user=inline_query.from_user.id)
+    subs = usersmodel.get_subscriptions(tel_user=inline_query.from_user.id)
     lessons = [studiesmodel.get_nearest_lesson(sub['id']) for sub in subs]
     groups_inline = gen_inline_groups_markup(subs, lessons)
     bot.answer_inline_query(inline_query.id, groups_inline)
@@ -205,7 +205,7 @@ def callback_settings(call):
     call.data = call.data[9:]
 
     def get_sub(id_, sub_id):
-        sub = usersmodel.get_subsciptions(tel_user=id_, sub_id=sub_id)
+        sub = usersmodel.get_subscriptions(tel_user=id_, sub_id=sub_id)
         if sub != []:
             sub = sub[0]
         return sub
@@ -226,9 +226,9 @@ def callback_settings(call):
 
     if call.data.startswith('unsub-'):
         sub_id = call.data[6:]
-        removed_group = usersmodel.delete_subscription(call.from_user.id, sub_id)
-        subs =  usersmodel.get_subsciptions(tel_user=call.from_user.id)
-        bot.answer_callback_query(call.id, text=Messages.removed_group(removed_group))
+        usersmodel.delete_subscription(call.from_user.id, sub_id)
+        subs = usersmodel.get_subscriptions(tel_user=call.from_user.id)
+        bot.answer_callback_query(call.id, text=Messages.removed_group())
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               reply_markup=gen_groups_settings_markup(subs), text=Messages.please_select_group)
 
@@ -255,7 +255,7 @@ def callback_settings(call):
 
 
     if call.data.startswith('back'):
-        subs = usersmodel.get_subsciptions(tel_user=call.from_user.id,)
+        subs = usersmodel.get_subscriptions(tel_user=call.from_user.id,)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                               reply_markup=gen_groups_settings_markup(subs), text=Messages.please_select_group)
 

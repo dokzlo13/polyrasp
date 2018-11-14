@@ -47,8 +47,11 @@ class Messages:
         return "*Расписание на {0}:*".format(date.strftime("%A, %d %B %Y"))
 
     @staticmethod
-    def removed_group(removed_group):
-        return emoj(':no_entry_sign: Группа {0} удалена из ваших подписок!'.format(removed_group))
+    def removed_group(removed_group=None):
+        if removed_group:
+            return emoj(':no_entry_sign: Группа {0} удалена из ваших подписок!'.format(removed_group))
+        else:
+            return emoj(':no_entry_sign: Группа удалена из ваших подписок!')
 
 class ParseMode(object):
     """This object represents a Telegram Message Parse Modes."""
