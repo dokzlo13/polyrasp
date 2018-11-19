@@ -4,8 +4,8 @@ from datetime import datetime
 
 from telebot import types
 
-from .templates import ParseMode
-from .templates import selected_group_message
+from .templates import ParseMode, Messages
+from .templates import selected_group_message, lessons_template
 from .templates import level_mapper, type_mapper, kind_mapper, group_checkout_mapper
 from .markups import *
 from .chains import Retry
@@ -96,7 +96,7 @@ def handle_group_commit(bot, message, **kwargs):
     group = kwargs.get('group')
     confirm = group_checkout_mapper.get(message.text)
     if confirm:
-        sub = u.add_subscription(message.from_user.id, group, message.chat.id)
+        sub = u.add_subscription(message.from_user.id, message.chat.id, group)
         celery.send_task('deferred.get_subscribtion', args=[str(sub)])
 
         text = 'Ваша группа добавлена в список подписок!\nПросмотреть все подписки можно командой /subs' \
@@ -109,6 +109,7 @@ def handle_teacher_name(bot, message, **kwargs):
     "Введите имя преподавателя:"
 
     result = celery.send_task('deferred.get_teacher_search', args=[message.text])
+    bot.send_chat_action(message.chat.id, 'typing')
     # result = get_teacher_search.delay(message.text)
     bot.send_message(message.chat.id, 'Произвожу поиск...')
     result = result.wait(timeout=10)
@@ -127,20 +128,25 @@ def handle_teacher_selection(bot, message, **kwargs):
     for teacher in teachers:
         if teacher['full_name'] == message.text:
             result = celery.send_task('deferred.get_teacher_lessons', args=[teacher['id']])
+            bot.send_chat_action(message.chat.id, 'typing')
             # result = get_teacher_lessons.delay(teacher['id'])
             result = result.wait(timeout=10)
 
     if not result:
         raise Retry('Для этого преподавателя нет расписания!')
 
-    kwargs.update({'next_step_markup': gen_list_markup(result, 'date')})
+    dates_list = []
+    for item in result:
+        dates_list.append(Messages.teacher_date_templ(datetime.strptime(item['date'], '%Y-%m-%d')))
+
+    kwargs.update({'next_step_markup': gen_list_markup(dates_list)})
     kwargs.update({'teacher_rasp': result})
     return kwargs
 
 
 def handle_teacher_date(bot, message, **kwargs):
     "Выберите необходимую дату:"
-
+    bot.send_chat_action(message.chat.id, 'typing')
     teacher_rasp = kwargs.get('teacher_rasp')
 
     lessons = []
@@ -149,7 +155,11 @@ def handle_teacher_date(bot, message, **kwargs):
         if rasp == []:
             continue
         weekday = datetime.strptime(rasp['date'], '%Y-%m-%d')
-        if datetime.strptime(message.text, '%Y-%m-%d') == weekday:
+        try:
+            recieved_date = datetime.strptime(message.text, Messages.teacher_time_template)
+        except ValueError:
+            raise Retry('Нет расписания на этот день')
+        if recieved_date == weekday:
             for lesson in rasp['lessons']:
                 lesson['time_start'] = convert_concat_day_and_lesson(lesson['time_start'], weekday)
                 lesson['time_end'] = convert_concat_day_and_lesson(lesson['time_end'], weekday)

@@ -19,28 +19,33 @@ class Userdata:
             return self.users.insert_one({'uid': tele_user_id,
                                           'name': user_name,
                                           'subscription': [],
-                                          'settings': {},
-                                          'subscription_settings': {}
+                                          'settings': {'default_group': None},
+                                          'subscription_settings': []
                                           }).inserted_id
 
-    def add_subscription(self, tel_user_id, sub, message_chat_id):
+    def add_subscription(self, tel_user, message_chat_id, sub_body):
         # sub.update({'notification': True})
-        existed_sub = self.get_sub_by_group_id(sub['id'])
+        existed_sub = self.get_sub_by_group_id(sub_body['id'])
         if not existed_sub:
-            sub = self.subscriptions.insert_one(sub).inserted_id
+            sub = self.subscriptions.insert_one(sub_body).inserted_id
         else:
             sub = existed_sub['_id']
 
         settings = {
             'chat': message_chat_id,
-            'notify': True
+            'notify': True,
+            'default': False
         }
-
-        self.users.update({'uid': tel_user_id},
+        settings.update({'id': sub})
+        self.users.update({'uid': tel_user},
                           {'$addToSet': {'subscription': sub}})
-        self.users.update({'uid': tel_user_id},
-                {'$set': {'subscription_settings.' + str(sub): settings}},
+        self.users.update({'uid': tel_user},
+                          {'$push': {'subscription_settings': settings}},
+                          # {'$set': {'subscription_settings.' + str(sub): settings}},
         )
+        # Select first added group as default
+        if self.get_user_default_group(tel_user) == None:
+            self.set_user_default_group(tel_user, sub)
         return sub
 
     def get_user_by_tel_id(self, user_id):
@@ -49,43 +54,80 @@ class Userdata:
     def get_sub_by_group_id(self, group_id):
         return self.subscriptions.find_one({'id': int(group_id)})
 
-    def get_sub_by_string_id(self, sub_id):
-        return self.subscriptions.find_one({'_id': ObjectId(sub_id)})
+    def get_sub_by_string_id(self, sub_id, string_id=False):
+        raw = self.subscriptions.find_one({'_id': ObjectId(sub_id)})
+        if raw and string_id:
+            raw.update({'_id': str(raw['_id'])})
+        return raw
 
-    def get_all_subs(self):
-        return self.subscriptions.find()
+    def get_all_subs(self, string_id=False):
+        raw = self.subscriptions.find()
+        if string_id:
+            for item in raw:
+                item.update({'_id': str(item['_id'])})
+                yield item
+        else:
+            yield from raw
 
     def update_subscription_acces_time(self, sub_id):
-        self.subscriptions.update({'_id': ObjectId(sub_id) if isinstance(sub_id, str) else sub_id}, {'$set': {'upd_time': datetime.now()}})
+        self.subscriptions.update({'_id': ObjectId(sub_id)},
+                                  {'$set': {'upd_time': datetime.now()}})
 
     def delete_subscription(self, tel_user, sub_id):
-        subs = self.get_subsciptions(tel_user=tel_user, sub_id=sub_id)
-        if subs == []:
-            return
-        for sub in subs:
-            if sub['_id'] == ObjectId(sub_id) if isinstance(sub_id, str) else sub_id:
-                # self.subscriptions.remove({'_id': ObjectId(sub_id) if isinstance(sub_id, str) else sub_id})
-                self.users.update({'uid': int(tel_user)}, {'$pull': {'subscription': ObjectId(sub_id) if isinstance(sub_id, str) else sub_id}})
-                self.users.update({'uid': int(tel_user)}, {"$unset": {'subscription_settings.'+str(sub_id): ""} })
-                return sub['name']
+        self.users.update({'uid': int(tel_user)},
+                          {'$pull': {'subscription': ObjectId(sub_id)}})
+        self.users.update({'uid': int(tel_user)},
+                          {"$pull": {'subscription_settings': {"id": ObjectId(sub_id)}}})
+        if self.get_user_default_group(tel_user) == str(sub_id):
+            # If user has another group (only one) - select this group as default
+            aviable = list(self.get_subscriptions(tel_user=tel_user))
+            if len(aviable) == 1:
+                print('SET TO ', aviable[0]['_id'])
+                self.set_user_default_group(tel_user, aviable[0]['_id'])
+            else:
+                print('UNSET ALL')
+                self.unset_default_groups(tel_user)
+
 
     def get_user_subscription_settings(self, tel_user=None, sub_id=None):
-        subs = self.get_subsciptions(tel_user=tel_user, sub_id=sub_id)
-        if subs:
-            sub = str(subs[0]['_id'])
+        subs = list(self.get_subscriptions(tel_user=tel_user, sub_id=sub_id))
+        if not subs:
+            return [], {}
+
+        if sub_id:
+            q = [
+                {"$unwind": "$subscription_settings"},
+                {"$match": {'uid': int(tel_user), "subscription_settings.id": subs[0]['_id']}},
+                {"$project": {"subscription_settings": 1, '_id':0}}
+            ]
         else:
-            return
-        user = self.users.find_one({'uid':tel_user})
-        return subs[0], user['subscription_settings'][sub]
+            q = [
+                {"$match": {'uid': int(tel_user)}},
+                {"$project": {"subscription_settings": 1, '_id': 0}}
+            ]
+
+        try:
+            user_sub_settings = next(self.users.aggregate(q))['subscription_settings']
+        except StopIteration:
+            return [], {}
+        except KeyError:
+            return [], {}
+        else:
+            if sub_id:
+                return subs[0], user_sub_settings
+            else:
+                return zip(subs, user_sub_settings)
 
     def change_notification_state(self, tel_user, sub_id):
         sub, settings = self.get_user_subscription_settings(tel_user, sub_id)
-        print(settings)
-        self.users.update({'uid': tel_user}, {'$set': {'subscription_settings.'+str(sub['_id'])+'.notify': not settings['notify']}})
-        sub.update({"notify": not settings['notify']})
+        self.users.update({"uid": int(tel_user), "subscription_settings.id": ObjectId(sub_id)},
+                        {"$set": {
+                            "subscription_settings.$.notify": not settings['notify']
+                        }})
+        settings.update({"notify": not settings['notify']})
         return sub, settings
 
-    def get_subsciptions(self, *, tel_user=None, db_user=None, sub_id=None):
+    def get_subscriptions(self, *, tel_user=None, db_user=None, sub_id=None, string_id=False):
 
         query = [
                 {'$match': {'uid': int(tel_user)}} if tel_user else {'$match': {'_id': db_user}},
@@ -101,15 +143,26 @@ class Userdata:
             ]
 
         if sub_id:
+            query.append({"$unwind": "$subscription"})
             query.append({'$match': {'subscription._id': ObjectId(sub_id)}})
 
         subs = self.users.aggregate(query)
         try:
             subs = next(subs)
         except StopIteration:
-            return []
+            yield
         else:
-            return subs['subscription']
+            if isinstance(subs['subscription'], (list, tuple)):
+                raw = subs['subscription']
+            else:
+                raw = [subs['subscription']]
+
+        if string_id:
+            for item in raw:
+                item.update({'_id': str(item['_id'])})
+                yield item
+        else:
+            yield from raw
 
     def get_all_users_subscribes(self):
         data = []
@@ -122,7 +175,7 @@ class Userdata:
         data = []
         raw = self.users.find({}, {"subscription_settings" :1, '_id':0})
         for item in raw:
-            data.append(item["subscription_settings"])
+            data.extend(item["subscription_settings"])
         return data
 
     def get_unused_subscriptions(self):
@@ -133,6 +186,35 @@ class Userdata:
 
     def purge_subscription_timeouts(self):
         return self.subscriptions.update_many({}, {'$set': {'upd_time': datetime.min}})
+
+    def get_user_default_group(self, tel_user):
+        try:
+            default = next(self.users.find({'uid': int(tel_user)}))['settings']['default_group']
+        except StopIteration:
+            return None
+        else:
+            if default == None:
+                return None
+            else:
+                return str(default)
+
+    def unset_default_groups(self, tel_user):
+        self.users.update({'uid': int(tel_user)},
+                          {'$set': {'settings.default_group': None}},
+        )
+        self.users.update({"uid": int(tel_user)},
+                          {"$set": {"subscription_settings.$[].default": False}})
+
+
+    def set_user_default_group(self, tel_user, sub_id):
+        self.unset_default_groups(tel_user)
+        self.users.update({'uid': int(tel_user)},
+                          {'$set': {'settings.default_group': ObjectId(sub_id)}},
+        )
+        self.users.update({'uid': int(tel_user), 'subscription_settings.id': ObjectId(sub_id)},
+                          {'$set': {'subscription_settings.$.default': True}},
+        )
+
 
 class Studiesdata:
     def __init__(self, db):

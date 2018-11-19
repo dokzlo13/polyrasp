@@ -34,14 +34,18 @@ def gen_list_markup(list_, key=None, back=True):
 def gen_search_menu_markup():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.row(types.KeyboardButton(search_menu['teacher']))
-    markup.row(types.KeyboardButton(search_menu['calendar']))
     markup.row(types.KeyboardButton(main_menu_button))
     return markup
 
 
 def gen_main_menu_markup():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    markup.row(types.KeyboardButton(main_menu['nearset']), types.KeyboardButton(main_menu['week']))
+    row = []
+    row.append(types.KeyboardButton(main_menu['nearest']))
+    row.append(types.KeyboardButton(main_menu['week']))
+    row.append(types.KeyboardButton(main_menu['cal']))
+    markup.row(*row)
+
     row = []
     row.append(types.KeyboardButton(main_menu['plan']))
     row.append(types.KeyboardButton(main_menu['subs']))
@@ -63,6 +67,8 @@ def gen_inline_groups_markup(subs, lessons):
 
 
 def gen_groups_settings_markup(subs):
+    if not isinstance(subs, (list, tuple)):
+        subs = [subs]
     markup = types.InlineKeyboardMarkup(row_width=1)
     # First row - Month and Year
     row = []
@@ -73,22 +79,31 @@ def gen_groups_settings_markup(subs):
     markup.add(*row)
     return markup
 
-#
-# def gen_groups_choice_markup(subs):
-#     markup = types.InlineKeyboardMarkup(row_width=1)
-#     # First row - Month and Year
-#     row = []
-#     row.append(types.InlineKeyboardButton('Ваши группы:', callback_data="ignore"))
-#     for gr in subs:
-#         row.append(types.InlineKeyboardButton(gr['name'], callback_data='calendar-select-group-' + str(gr['_id'])))
-#     row.append(types.InlineKeyboardButton('Закрыть', callback_data="dialog-close"))
-#     markup.add(*row)
-#     return markup
+def gen_groups_choice_markup(subs, back_to=None, cached=None):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    row = []
+    for gr, set in subs:
+        if cached:
+            if str(gr['_id']) == cached:
+                name = emoj(':white_check_mark: {0}'.format(gr['name']))
+            else:
+                name = emoj(':white_medium_square: {0}'.format(gr['name']))
+        else:
+            if set['default']:
+                name = emoj(':white_check_mark: {0}'.format(gr['name']))
+            else:
+                name = emoj(':white_medium_square: {0}'.format(gr['name']))
+
+        row.append(types.InlineKeyboardButton(name,
+                                              callback_data='change_group-select-{0}-{1}'.format(str(gr['_id']), back_to)))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_backward: Назад"), callback_data=str(back_to)))
+    markup.add(*row)
+    return markup
 
 
 def gen_groups_settings_info():
     markup = types.ReplyKeyboardMarkup(row_width=1)
-    markup.row(types.KeyboardButton(groups_menu['settings']))
+    markup.row(types.KeyboardButton(groups_menu['groupset']))
     markup.row(types.KeyboardButton(groups_menu['add']))
     markup.row(types.KeyboardButton(main_menu_button))
     return markup
@@ -105,16 +120,9 @@ def create_group_settings_markup(name, sub_id, sub_state):
 
     row = []
 
-    # row.append(types.InlineKeyboardButton(emoj(':no_bell: Не уведомлять') \
-    #                                           if sub_state else \
-    #                                           emoj(':bell: Уведомлять'),
-    #                                       callback_data='settings-push-'+sub_id))
-
-    row.append(types.InlineKeyboardButton(emoj(":x: В разработке :x:"),
-                                          callback_data='settings-back'))
-
-    # row.append(types.InlineKeyboardButton(emoj(':alarm_clock: Время уведомлений'),
-    #                                       callback_data='settings-time-'+sub_id))
+    row.append(types.InlineKeyboardButton(emoj(':white_check_mark: По-умолчанию') if sub_state['default']
+                                          else emoj(':white_medium_square: По-умолчанию'),
+                                          callback_data='settings-groupdefault-'+sub_id))
 
     row.append(types.InlineKeyboardButton(emoj(":x: В разработке :x:"),
                                           callback_data='settings-back'))
@@ -127,7 +135,7 @@ def create_group_settings_markup(name, sub_id, sub_state):
     return markup
 
 
-def create_calendar_inline(year, month):
+def create_calendar_inline(year, month, current_group=None):
     markup = types.InlineKeyboardMarkup()
     #First row - Month and Year
     row=[]
@@ -151,42 +159,48 @@ def create_calendar_inline(year, month):
         markup.row(*row)
     #Last row - Buttons
     row=[]
-    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="calendar-previous-month"))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="calendar-previous"))
     row.append(types.InlineKeyboardButton("Закрыть",callback_data="dialog-close"))
-    row.append(types.InlineKeyboardButton(emoj(":arrow_forward:"), callback_data="calendar-next-month"))
+    row.append(types.InlineKeyboardButton(
+            current_group, callback_data="change_group-init-calendar-current"
+    ))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_forward:"), callback_data="calendar-next"))
     markup.row(*row)
     return markup
 
 def create_month_back_inline(date):
     markup = types.InlineKeyboardMarkup()
     row = []
-    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="calendar-back-to-calendar"))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="calendar-current"))
     row.append(types.InlineKeyboardButton(date.strftime("%A, %d %B %Y"), callback_data="ignore"))
     row.append(types.InlineKeyboardButton("Закрыть",callback_data="dialog-close"))
     markup.row(*row)
     return markup
 
 
-def create_week_inline(date):
+def create_week_inline(date, current_group=None):
+    current_group = current_group or ''
     markup = types.InlineKeyboardMarkup()
     week = list(full_week(date))
 
     row=[]
     for day in week:
-        row.append(types.InlineKeyboardButton(day.strftime("%a"), callback_data="week-day-" + day.strftime("%Y-%m-%d")))
+        row.append(types.InlineKeyboardButton(day.strftime("%a"), callback_data="week-day-" + day.strftime("%Y.%m.%d")))
     markup.row(*row)
 
-    row=[]
-    for day in week:
-        row.append(types.InlineKeyboardButton(day.strftime("%d"), callback_data="week-day-" + day.strftime("%Y-%m-%d")))
+    row = []
+    row.append(types.InlineKeyboardButton(
+            '{0} {1}-{2}'.format(emoj(':date:'), week[0].strftime('%d %b'), week[-1].strftime('%d %b')),
+                    callback_data="ignore")
+    )
+    row.append(types.InlineKeyboardButton(
+            current_group, callback_data="change_group-init-week-current"
+    ))
     markup.row(*row)
-
-    markup.row(types.InlineKeyboardButton(emoj(':date:')+ week[0].strftime(' %B').capitalize(), callback_data="ignore"))
-
     row=[]
-    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="week-previous-week"))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_backward:"), callback_data="week-previous"))
     row.append(types.InlineKeyboardButton("Закрыть",callback_data="dialog-close"))
-    row.append(types.InlineKeyboardButton(emoj(":arrow_forward:"), callback_data="week-next-week"))
+    row.append(types.InlineKeyboardButton(emoj(":arrow_forward:"), callback_data="week-next"))
     markup.row(*row)
 
     return markup

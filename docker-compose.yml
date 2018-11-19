@@ -8,8 +8,8 @@ services:
     env_file:
       - 'variables.env'
     environment:
-      - BOT_TOKEN=**SANTINIZED**
-      - BOT_DEBUG=1
+      - BOT_TOKEN=$BOT_TOKEN
+      - DEBUG=$DEBUG
     depends_on:
       - redis
       - mongo
@@ -36,7 +36,11 @@ services:
       mongo-redis-celery:
         aliases:
           - "redis"
-    
+    volumes:
+      - ./data/redis:/data
+    entrypoint: redis-server --appendonly yes
+    restart: always
+
   mongo:   
     image: mongo:latest
     environment:
