@@ -13,3 +13,9 @@ class HandleMiddleware(metaclass=ABCMeta):
     @abstractmethod
     def _add_handlers(self):
         pass
+
+    def log_wrapper(self, fun):
+        def decor(message):
+            # print("User {0} send {1}".format(message.from_user.id, message.text))
+            return fun(message)
+        return decor

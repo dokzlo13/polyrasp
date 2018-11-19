@@ -28,7 +28,7 @@ class CommandHandlers(HandleMiddleware):
             if method[0].startswith('_'):
                 continue
             # print('METHOD', method)
-            self._add_handler(method[1], commands=[method[0].replace('_handler', '')],
+            self._add_handler(self.log_wrapper(method[1]), commands=[method[0].replace('_handler', '')],
                               content_types=['text'],
                               )
 

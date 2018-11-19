@@ -10,6 +10,12 @@ class CommandsAliases:
             return message.text == value
         return fun
 
+    def log_wrapper(self, fun):
+        def decor(message):
+            # print("User {0} send {1}".format(message.from_user.id, message.text))
+            return fun(message)
+        return decor
+
     def __init__(self, command_handlers: CommandHandlers, *mappers: dict):
         if len(mappers) < 1:
             raise ValueError('Need to be setted almost one mapper for aliases')
@@ -41,7 +47,7 @@ class CommandsAliases:
                 print('Alias found for "{0}" -> "{2}"'.format(*founded_alias), )
                 command_handlers._add_handler(founded_alias[1],
                                      commands=None,
-                                     func=self.alias_filter(founded_alias[2]),
+                                     func=self.log_wrapper(self.alias_filter(founded_alias[2])),
                                      content_types=['text'],
                                      regexp=None
                                      )
