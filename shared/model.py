@@ -54,8 +54,11 @@ class Userdata:
     def get_sub_by_group_id(self, group_id):
         return self.subscriptions.find_one({'id': int(group_id)})
 
-    def get_sub_by_string_id(self, sub_id):
-        return self.subscriptions.find_one({'_id': ObjectId(sub_id)})
+    def get_sub_by_string_id(self, sub_id, string_id=False):
+        raw = self.subscriptions.find_one({'_id': ObjectId(sub_id)})
+        if raw and string_id:
+            raw.update({'_id': str(raw['_id'])})
+        return raw
 
     def get_all_subs(self, string_id=False):
         raw = self.subscriptions.find()

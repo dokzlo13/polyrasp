@@ -130,8 +130,8 @@ def get_all_subscibtions_data(force=False):
 @app.task(name='deferred.get_subscribtion')
 def get_subscribtion(sub_id):
     with UserStandalone() as u:
-        updates = process_sub(u.get_sub_by_string_id(sub_id=sub_id))
-    return updates
+        res = process_sub.delay(u.get_sub_by_string_id(sub_id=sub_id, string_id=True))
+    return res
 
 
 @app.task(name='deferred.get_user_subscribtion')
