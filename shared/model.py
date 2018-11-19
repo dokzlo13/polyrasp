@@ -54,11 +54,20 @@ class Userdata:
     def get_sub_by_group_id(self, group_id):
         return self.subscriptions.find_one({'id': int(group_id)})
 
-    def get_sub_by_string_id(self, sub_id):
-        return self.subscriptions.find_one({'_id': ObjectId(sub_id)})
+    def get_sub_by_string_id(self, sub_id, string_id=False):
+        raw = self.subscriptions.find_one({'_id': ObjectId(sub_id)})
+        if raw and string_id:
+            raw.update({'_id': str(raw['_id'])})
+        return raw
 
-    def get_all_subs(self):
-        return self.subscriptions.find()
+    def get_all_subs(self, string_id=False):
+        raw = self.subscriptions.find()
+        if string_id:
+            for item in raw:
+                item.update({'_id': str(item['_id'])})
+                yield item
+        else:
+            yield from raw
 
     def update_subscription_acces_time(self, sub_id):
         self.subscriptions.update({'_id': ObjectId(sub_id)},
@@ -71,10 +80,7 @@ class Userdata:
                           {"$pull": {'subscription_settings': {"id": ObjectId(sub_id)}}})
         if self.get_user_default_group(tel_user) == str(sub_id):
             # If user has another group (only one) - select this group as default
-            aviable = self.get_subscriptions(tel_user=tel_user)
-
-            print(aviable)
-
+            aviable = list(self.get_subscriptions(tel_user=tel_user))
             if len(aviable) == 1:
                 print('SET TO ', aviable[0]['_id'])
                 self.set_user_default_group(tel_user, aviable[0]['_id'])
@@ -84,15 +90,21 @@ class Userdata:
 
 
     def get_user_subscription_settings(self, tel_user=None, sub_id=None):
-        subs = self.get_subscriptions(tel_user=tel_user, sub_id=sub_id)
+        subs = list(self.get_subscriptions(tel_user=tel_user, sub_id=sub_id))
         if not subs:
             return [], {}
 
-        q = [
-            {"$unwind": "$subscription_settings"},
-            {"$match": {'uid': int(tel_user), "subscription_settings.id": subs[0]['_id']}},
-            {"$project": {"subscription_settings": 1, '_id':0}}
-        ]
+        if sub_id:
+            q = [
+                {"$unwind": "$subscription_settings"},
+                {"$match": {'uid': int(tel_user), "subscription_settings.id": subs[0]['_id']}},
+                {"$project": {"subscription_settings": 1, '_id':0}}
+            ]
+        else:
+            q = [
+                {"$match": {'uid': int(tel_user)}},
+                {"$project": {"subscription_settings": 1, '_id': 0}}
+            ]
 
         try:
             user_sub_settings = next(self.users.aggregate(q))['subscription_settings']
@@ -101,7 +113,10 @@ class Userdata:
         except KeyError:
             return [], {}
         else:
-            return subs[0], user_sub_settings
+            if sub_id:
+                return subs[0], user_sub_settings
+            else:
+                return zip(subs, user_sub_settings)
 
     def change_notification_state(self, tel_user, sub_id):
         sub, settings = self.get_user_subscription_settings(tel_user, sub_id)
@@ -112,7 +127,7 @@ class Userdata:
         settings.update({"notify": not settings['notify']})
         return sub, settings
 
-    def get_subscriptions(self, *, tel_user=None, db_user=None, sub_id=None):
+    def get_subscriptions(self, *, tel_user=None, db_user=None, sub_id=None, string_id=False):
 
         query = [
                 {'$match': {'uid': int(tel_user)}} if tel_user else {'$match': {'_id': db_user}},
@@ -135,12 +150,19 @@ class Userdata:
         try:
             subs = next(subs)
         except StopIteration:
-            return []
+            yield
         else:
             if isinstance(subs['subscription'], (list, tuple)):
-                return subs['subscription']
+                raw = subs['subscription']
             else:
-                return [subs['subscription']]
+                raw = [subs['subscription']]
+
+        if string_id:
+            for item in raw:
+                item.update({'_id': str(item['_id'])})
+                yield item
+        else:
+            yield from raw
 
     def get_all_users_subscribes(self):
         data = []

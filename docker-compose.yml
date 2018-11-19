@@ -9,7 +9,7 @@ services:
       - 'variables.env'
     environment:
       - BOT_TOKEN=$BOT_TOKEN
-      - BOT_DEBUG=$DEBUG
+      - DEBUG=$DEBUG
     depends_on:
       - redis
       - mongo
