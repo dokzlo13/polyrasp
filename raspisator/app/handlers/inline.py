@@ -21,11 +21,13 @@ class InlineParser(HandleMiddleware):
             raise ValueError('Wrnog prefix for inline parser')
         call.data = call.data[len(self.__prefix__) + 1:]
         for method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if method[0].startswith('_'):
+                continue
             if not call.data:
                 return
             if call.data.startswith(method[0]):
                 args = call.data[len(method[0]) + 1:].split('-')
-                print('User "{0}" call inline "{1}" args={2}'.format(call.from_user.id, self.__prefix__+'-'+method[0], args))
+                # print('User "{0}" call inline "{1}" args={2}'.format(call.from_user.id, self.__prefix__+'-'+method[0], args))
                 return method[1](call, *args)
 
     def _get_user_lessons_by_date(self, uid, date, markup=True):
@@ -79,7 +81,6 @@ class SettingsInline(InlineParser):
                               reply_markup=markup, text=text, parse_mode=ParseMode.MARKDOWN)
 
     def groupdefault(self, call, *args):
-        print("HEREIAM")
         sub_id = args[0]
         if self.u.get_user_default_group(call.from_user.id) == sub_id:
             self.bot.answer_callback_query(call.id, text=Messages.already_default_group)
@@ -214,18 +215,24 @@ class CurrrentGroupSwitcher(InlineParser):
         markup = gen_groups_choice_markup(subs, back_to, cached)
         return markup
 
-    def respond_mock(self, call, markup):
+    def _respond_mock(self, call, markup):
         self.bot.edit_message_text(Messages.please_select_current_group, call.from_user.id, call.message.message_id,
                                    reply_markup=markup)
         self.bot.answer_callback_query(call.id, text="")
 
     def init(self, call, *args):
-        self.respond_mock(call, self._create_changegroup_markup(call.from_user.id, *args))
+        self._respond_mock(call, self._create_changegroup_markup(call.from_user.id, *args))
 
     def select(self, call, *args):
-        self.cache.set_user_curr_gr(call.from_user.id, args[0])
+        to_select = args[0]
+        curr = self.cache.get_user_curr_gr(call.from_user.id)
+        if curr == to_select:
+            self.bot.answer_callback_query(call.id, text=Messages.already_current_group)
+            return
+
+        self.cache.set_user_curr_gr(call.from_user.id, to_select)
         self.bot.answer_callback_query(call.id, text=Messages.group_select_succeed)
-        self.respond_mock(call, self._create_changegroup_markup(call.from_user.id, *args[1:]))
+        self._respond_mock(call, self._create_changegroup_markup(call.from_user.id, *args[1:]))
 
 
 class InlineHandlers(HandleMiddleware):

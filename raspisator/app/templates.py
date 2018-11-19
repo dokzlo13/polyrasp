@@ -53,6 +53,7 @@ class Messages:
     please_select_group = "Пожалуйста, выберите группу"
     please_select_current_group = "Пожалуйста, выберите группу для получения информации:"
     already_default_group = emoj(":white_check_mark: Группа уже по-умолчанию")
+    already_current_group = emoj(":white_check_mark: Группа уже выбрана")
     setted_default_group = emoj(":white_check_mark: Группа выбрана по-умолчанию")
     group_select_succeed = emoj(":white_check_mark: Группа для показа информации выбрана")
 
