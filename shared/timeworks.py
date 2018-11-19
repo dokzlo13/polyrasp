@@ -2,9 +2,8 @@
 from datetime import datetime, timedelta
 
 def timeout_has_passed(sub, renew_time):
-    if  sub.get('upd_time') is None or \
-            not sub.get('upd_time'):
-        return False
+    if  sub.get('upd_time') is None:
+        return True
     date = sub['upd_time']
     if isinstance(date, str):
         try:
