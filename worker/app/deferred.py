@@ -30,6 +30,7 @@ app = Celery(broker=CELERY_BROKER_URL,
 app.conf.timezone = 'UTC'
 
 RENEW_TIMEOUT = 60 * 30
+INITIAL_WEEKS_DEPTH = 10
 WEEKS_DEPTH = 2
 # NOTIFY_DELAY = 4
 UNLINK_DELAY = 60.0*20
@@ -102,16 +103,21 @@ def collect_lessons_data(facult, id_, params=None):
 
 
 @app.task
-def process_sub(sub, force=False):
-    updates = {}
+def process_sub(sub, force=False, initial=False):
+    updates = {'timeout_passed':False}
     with StudiesStandalone() as s, \
             UserStandalone() as u:
         if not force and not timeout_has_passed(sub, RENEW_TIMEOUT):
-            print('Timeout isn\'t passed')
-            return
+            # print('Timeout isn\'t passed')
+            return updates
         updates[sub['id']] = {}
+        updates['timeout_passed'] = True
         # [None] means current week
-        for week in [None] + strf_list(get_weeks_range(WEEKS_DEPTH)):
+        if initial:
+            weeks = [None] + strf_list(get_weeks_range(INITIAL_WEEKS_DEPTH))
+        else:
+            weeks = [None] + strf_list(get_weeks_range(WEEKS_DEPTH))
+        for week in weeks:
             lessons = collect_lessons_data(sub['facultie'], sub['id'], params={'date': week} if week != None else {})
             if not lessons:
                 continue
@@ -128,9 +134,9 @@ def get_all_subscibtions_data(force=False):
     return res
 
 @app.task(name='deferred.get_subscribtion')
-def get_subscribtion(sub_id):
+def get_subscribtion(sub_id, initial=False):
     with UserStandalone() as u:
-        res = process_sub.delay(u.get_sub_by_string_id(sub_id=sub_id, string_id=True))
+        res = process_sub.delay(u.get_sub_by_string_id(sub_id=sub_id, string_id=True),  initial=initial)
     return res
 
 
