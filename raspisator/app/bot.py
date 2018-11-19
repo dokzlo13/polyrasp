@@ -12,11 +12,11 @@ from .worker import celery, redis
 from .templates import ParseMode, Messages, main_menu, groups_menu, search_menu, main_menu_button
 from .handlers import CommandHandlers, CommandsAliases, InlineHandlers
 from .cache import Cache
+logger = telebot.logger
 
 locale.setlocale(locale.LC_ALL, ('RU','UTF8'))
 
-logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG if os.environ.get('BOT_DEBUG', '0') == '1'
+logger.setLevel(logging.DEBUG if os.environ.get('DEBUG', '0') == '1'
                         else logging.INFO) # Outputs debug messages to console.
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN', None)
@@ -24,9 +24,8 @@ MONGO_CONNECTION = os.environ.get('MONGO_CONNECTION', 'mongodb://localhost:27017
 MONGO_DB = os.environ.get('MONGO_DB', 'raspisator')
 
 
-# bot = telebot.TeleBot(token=BOT_TOKEN, threaded=False)
-bot = telebot.AsyncTeleBot(token=BOT_TOKEN, threaded=False)
-telebot.logger.warning('Initalizing bot with token: {0}'.format("<SANTINIZED>" if BOT_TOKEN != None else "<EMPTY>"))
+bot = telebot.TeleBot(token=BOT_TOKEN, threaded=False)
+logger.warning('Initalizing bot with token: {0}'.format("<SANTINIZED>" if BOT_TOKEN != None else "<EMPTY>"))
 
 conn = MongoClient(MONGO_CONNECTION)
 logger.warning("Database connected" if 'ok' in conn.server_info() and
@@ -57,7 +56,7 @@ InlineHandlers(bot,
                cache=cache)
 
 ## INLINE QUERY HANDLE NEAREST PAIR
-
+from .markups import gen_inline_groups_markup
 @bot.inline_handler(lambda query: query.query == '')
 def query_text(inline_query):
     subs = usersmodel.get_subscriptions(tel_user=inline_query.from_user.id)
