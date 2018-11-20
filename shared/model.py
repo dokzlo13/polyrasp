@@ -146,6 +146,7 @@ class Userdata:
             query.append({"$unwind": "$subscription"})
             query.append({'$match': {'subscription._id': ObjectId(sub_id)}})
 
+        raw = []
         subs = self.users.aggregate(query)
         try:
             subs = next(subs)
@@ -156,7 +157,6 @@ class Userdata:
                 raw = subs['subscription']
             else:
                 raw = [subs['subscription']]
-
         if string_id:
             for item in raw:
                 item.update({'_id': str(item['_id'])})
